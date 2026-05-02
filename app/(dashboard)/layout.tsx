@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Shell } from '@/components/layout/Shell'
+import { AppToastProvider } from '@/components/providers/ToastProvider'
 
 export default async function DashboardLayout({
   children,
@@ -11,5 +12,9 @@ export default async function DashboardLayout({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  return <Shell>{children}</Shell>
+  return (
+    <AppToastProvider>
+      <Shell>{children}</Shell>
+    </AppToastProvider>
+  )
 }

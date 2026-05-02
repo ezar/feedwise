@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { Loader2, Plus } from 'lucide-react'
+import { Loader2, Sparkles, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
+import { useToast } from '@/components/providers/ToastProvider'
 
 interface TopicPreview {
   query: string
@@ -21,12 +22,11 @@ export function TopicInput({ onConfirm }: TopicInputProps) {
   const [loading, setLoading] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [previews, setPreviews] = useState<TopicPreview[]>([])
-  const [error, setError] = useState<string | null>(null)
+  const { toast } = useToast()
 
   const handleGenerate = async () => {
     if (!text.trim()) return
     setLoading(true)
-    setError(null)
     setPreviews([])
     try {
       const res = await fetch('/api/feeds/generate-topics', {
@@ -38,7 +38,11 @@ export function TopicInput({ onConfirm }: TopicInputProps) {
       if (!res.ok) throw new Error(data.error ?? 'Error generando temas')
       setPreviews(data.preview ?? [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido')
+      toast({
+        title: 'Error generando temas',
+        description: err instanceof Error ? err.message : undefined,
+        variant: 'destructive',
+      })
     } finally {
       setLoading(false)
     }
@@ -48,8 +52,11 @@ export function TopicInput({ onConfirm }: TopicInputProps) {
     setConfirming(true)
     try {
       await onConfirm(previews)
+      toast({ title: `${previews.length} feed${previews.length > 1 ? 's' : ''} creados` })
       setText('')
       setPreviews([])
+    } catch {
+      toast({ title: 'Error creando feeds', variant: 'destructive' })
     } finally {
       setConfirming(false)
     }
@@ -58,28 +65,46 @@ export function TopicInput({ onConfirm }: TopicInputProps) {
   return (
     <div className="flex flex-col gap-3">
       <Textarea
-        placeholder="Quiero noticias de IA aplicada a productividad, sin fundraising..."
+        placeholder="Ej: quiero noticias de IA aplicada a productividad, sin fundraising ni inversión..."
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={3}
+        className="resize-none"
       />
-      <Button onClick={handleGenerate} disabled={loading || !text.trim()}>
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-        Generar feeds
+      <Button
+        onClick={handleGenerate}
+        disabled={loading || !text.trim()}
+        className="self-start"
+      >
+        {loading
+          ? <Loader2 className="h-4 w-4 animate-spin" />
+          : <Sparkles className="h-4 w-4" />
+        }
+        {loading ? 'Analizando...' : 'Generar con IA'}
       </Button>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+
       {previews.length > 0 && (
-        <div className="flex flex-col gap-2 border rounded-md p-3">
-          <p className="text-sm font-medium">Feeds a crear:</p>
-          {previews.map((p) => (
-            <div key={p.url} className="flex items-center gap-2">
-              <Badge variant="outline">{p.query}</Badge>
-              <span className="text-xs text-muted-foreground truncate">{p.url}</span>
-            </div>
-          ))}
-          <Button onClick={handleConfirm} disabled={confirming} size="sm" className="mt-1">
-            {confirming ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Confirmar y guardar
+        <div className="flex flex-col gap-3 border rounded-lg p-4 bg-muted/40 mt-1">
+          <p className="text-sm font-medium flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-green-500" />
+            Claude sugiere {previews.length} feed{previews.length > 1 ? 's' : ''}:
+          </p>
+          <ul className="flex flex-col gap-1.5">
+            {previews.map((p) => (
+              <li key={p.url} className="flex items-center gap-2">
+                <Badge variant="secondary" className="shrink-0">{p.query}</Badge>
+                <span className="text-xs text-muted-foreground truncate">{p.url}</span>
+              </li>
+            ))}
+          </ul>
+          <Button
+            onClick={handleConfirm}
+            disabled={confirming}
+            size="sm"
+            className="self-start mt-1"
+          >
+            {confirming && <Loader2 className="h-4 w-4 animate-spin" />}
+            Confirmar y crear feeds
           </Button>
         </div>
       )}

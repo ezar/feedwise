@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { ArticleList } from '@/components/articles/ArticleList'
+import { RefreshButton } from '@/components/layout/RefreshButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,13 +25,24 @@ export default async function HomePage() {
     .order('published_at', { ascending: false })
     .limit(40)
 
+  const total = articles?.length ?? 0
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold">Tu feed</h2>
-        <span className="text-xs text-muted-foreground">Umbral: {threshold}+</span>
+        <div>
+          <h2 className="text-xl font-semibold">Tu feed</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Umbral {threshold}+ · {total} artículo{total !== 1 ? 's' : ''}
+          </p>
+        </div>
+        <RefreshButton />
       </div>
-      <ArticleList initialArticles={articles ?? []} />
+      <ArticleList
+        initialArticles={articles ?? []}
+        emptyMessage="Nada relevante por ahora"
+        emptyHint={`Aún no hay artículos con puntuación ≥ ${threshold}. Prueba a bajar el umbral en Configuración o añade más feeds.`}
+      />
     </div>
   )
 }

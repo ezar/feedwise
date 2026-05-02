@@ -5,6 +5,7 @@ import { Loader2, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useToast } from '@/components/providers/ToastProvider'
 
 interface FeedFormProps {
   onAdded: () => void
@@ -14,13 +15,12 @@ export function FeedForm({ onAdded }: FeedFormProps) {
   const [url, setUrl] = useState('')
   const [title, setTitle] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!url.trim()) return
     setLoading(true)
-    setError(null)
     try {
       const res = await fetch('/api/feeds', {
         method: 'POST',
@@ -32,15 +32,20 @@ export function FeedForm({ onAdded }: FeedFormProps) {
       setUrl('')
       setTitle('')
       onAdded()
+      toast({ title: 'Feed añadido correctamente' })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido')
+      toast({
+        title: 'Error al añadir feed',
+        description: err instanceof Error ? err.message : undefined,
+        variant: 'destructive',
+      })
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div>
         <Label htmlFor="feed-url">URL del feed RSS</Label>
         <Input
@@ -63,8 +68,7 @@ export function FeedForm({ onAdded }: FeedFormProps) {
           className="mt-1"
         />
       </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button type="submit" disabled={loading || !url.trim()}>
+      <Button type="submit" disabled={loading || !url.trim()} className="self-start">
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
         Añadir feed
       </Button>
