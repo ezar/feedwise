@@ -42,7 +42,6 @@ export async function POST(req: Request) {
     return Response.json({ error: 'No feeds found in OPML' }, { status: 400 })
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
   const inserted: string[] = []
   const skipped: string[] = []
 
@@ -65,7 +64,7 @@ export async function POST(req: Request) {
 
     inserted.push(feed.url)
     try {
-      const scheduleId = await scheduleHourlyFetch(data.id, appUrl)
+      const scheduleId = await scheduleHourlyFetch(data.id)
       await supabase
         .from('feeds')
         .update({ qstash_schedule_id: scheduleId })

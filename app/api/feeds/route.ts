@@ -39,9 +39,8 @@ export async function POST(req: Request) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
   try {
-    const scheduleId = await scheduleHourlyFetch(feed.id, appUrl)
+    const scheduleId = await scheduleHourlyFetch(feed.id)
     await supabase
       .from('feeds')
       .update({ qstash_schedule_id: scheduleId })
