@@ -1,0 +1,53 @@
+{
+  "app": {
+    "name": "feedwise",
+    "tagline": "Noticias filtradas por IA"
+  },
+  "nav": {
+    "feed": "Feed",
+    "feeds": "Mis feeds",
+    "saved": "Guardados",
+    "settings": "Configuración"
+  },
+  "auth": {
+    "login": "Iniciar sesión",
+    "register": "Registrarse",
+    "logout": "Cerrar sesión",
+    "email": "Email",
+    "password": "Contraseña",
+    "noAccount": "¿No tienes cuenta?",
+    "hasAccount": "¿Ya tienes cuenta?"
+  },
+  "feed": {
+    "title": "Tu feed",
+    "empty": "No hay artículos todavía",
+    "emptyHint": "Añade feeds y configura tus intereses para ver artículos relevantes.",
+    "threshold": "Umbral"
+  },
+  "feeds": {
+    "title": "Gestión de feeds",
+    "addTopic": "Añadir por tema",
+    "addManual": "Añadir manual",
+    "active": "Feeds activos",
+    "describe": "Describe qué quieres leer",
+    "generate": "Generar feeds",
+    "confirm": "Confirmar y guardar",
+    "addRss": "Añadir feed RSS",
+    "url": "URL del feed RSS",
+    "name": "Nombre (opcional)",
+    "add": "Añadir feed"
+  },
+  "saved": {
+    "title": "Artículos guardados"
+  },
+  "settings": {
+    "title": "Configuración",
+    "interests": "Intereses y umbral de relevancia",
+    "interestsLabel": "Mis intereses",
+    "interestsHint": "Describe en lenguaje natural qué quieres leer.",
+    "threshold": "Umbral de relevancia",
+    "thresholdHint": "Solo verás artículos con puntuación mayor o igual al umbral.",
+    "save": "Guardar",
+    "saved": "¡Guardado!"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "app": {
+    "name": "feedwise",
+    "tagline": "AI-filtered news"
+  },
+  "nav": {
+    "feed": "Feed",
+    "feeds": "My feeds",
+    "saved": "Saved",
+    "settings": "Settings"
+  },
+  "auth": {
+    "login": "Sign in",
+    "register": "Sign up",
+    "logout": "Sign out",
+    "email": "Email",
+    "password": "Password",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?"
+  },
+  "feed": {
+    "title": "Your feed",
+    "empty": "No articles yet",
+    "emptyHint": "Add feeds and configure your interests to see relevant articles.",
+    "threshold": "Threshold"
+  },
+  "feeds": {
+    "title": "Feed management",
+    "addTopic": "Add by topic",
+    "addManual": "Add manually",
+    "active": "Active feeds",
+    "describe": "Describe what you want to read",
+    "generate": "Generate feeds",
+    "confirm": "Confirm and save",
+    "addRss": "Add RSS feed",
+    "url": "RSS feed URL",
+    "name": "Name (optional)",
+    "add": "Add feed"
+  },
+  "saved": {
+    "title": "Saved articles"
+  },
+  "settings": {
+    "title": "Settings",
+    "interests": "Interests and relevance threshold",
+    "interestsLabel": "My interests",
+    "interestsHint": "Describe in natural language what you want to read.",
+    "threshold": "Relevance threshold",
+    "thresholdHint": "You'll only see articles with a score equal to or above the threshold.",
+    "save": "Save",
+    "saved": "Saved!"
+  }
+}

@@ -1,0 +1,42 @@
+'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { Rss, Bookmark, Settings, LayoutDashboard } from 'lucide-react'
+import { cn } from '@/lib/utils'
+
+const navItems = [
+  { href: '/', label: 'Feed', icon: LayoutDashboard },
+  { href: '/feeds', label: 'Mis feeds', icon: Rss },
+  { href: '/saved', label: 'Guardados', icon: Bookmark },
+  { href: '/settings', label: 'Configuración', icon: Settings },
+]
+
+export function Sidebar() {
+  const pathname = usePathname()
+
+  return (
+    <aside className="hidden md:flex flex-col w-56 border-r bg-card h-screen sticky top-0 p-4 gap-1">
+      <div className="mb-4 px-2">
+        <h1 className="text-lg font-bold tracking-tight">feedwise</h1>
+      </div>
+      <nav className="flex flex-col gap-1">
+        {navItems.map(({ href, label, icon: Icon }) => (
+          <Link
+            key={href}
+            href={href}
+            className={cn(
+              'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+              pathname === href
+                ? 'bg-accent text-accent-foreground'
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            )}
+          >
+            <Icon className="h-4 w-4" />
+            {label}
+          </Link>
+        ))}
+      </nav>
+    </aside>
+  )
+}
