@@ -20,7 +20,9 @@ export function OPMLImport({ onImported }: OPMLImportProps) {
   const { toast } = useToast()
 
   const handleFile = async (file: File) => {
-    if (!file.name.endsWith('.opml') && !file.name.endsWith('.xml')) {
+    const validExt = ['.opml', '.xml'].some((ext) => file.name.toLowerCase().endsWith(ext))
+    const validMime = ['text/x-opml', 'text/xml', 'application/xml', 'application/octet-stream', ''].includes(file.type)
+    if (!validExt && !validMime) {
       toast({ title: 'Formato incorrecto', description: 'El archivo debe ser .opml o .xml', variant: 'destructive' })
       return
     }
@@ -80,7 +82,7 @@ export function OPMLImport({ onImported }: OPMLImportProps) {
         <input
           ref={inputRef}
           type="file"
-          accept=".opml,.xml"
+          accept=".opml,.xml,text/x-opml,text/xml,application/xml,application/octet-stream"
           className="hidden"
           onChange={handleInputChange}
         />
