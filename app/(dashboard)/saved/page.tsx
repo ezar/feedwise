@@ -5,12 +5,10 @@ export const dynamic = 'force-dynamic'
 
 export default async function SavedPage() {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
 
   const { data: articles } = await supabase
     .from('articles')
-    .select('*, feeds!inner(user_id, title)')
-    .eq('feeds.user_id', user!.id)
+    .select('*, feeds(title)')
     .eq('is_saved', true)
     .order('published_at', { ascending: false })
     .limit(100)

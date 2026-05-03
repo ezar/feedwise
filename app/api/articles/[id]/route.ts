@@ -17,8 +17,7 @@ export async function PATCH(
     .from('articles')
     .update(updates)
     .eq('id', params.id)
-    .select('*, feeds!inner(user_id)')
-    .eq('feeds.user_id', user.id)
+    .select('*')
     .single()
 
   if (error) return Response.json({ error: error.message }, { status: 500 })

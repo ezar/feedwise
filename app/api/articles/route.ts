@@ -23,8 +23,7 @@ export async function GET(req: Request) {
 
   let query = supabase
     .from('articles')
-    .select('*, feeds!inner(user_id, title)')
-    .eq('feeds.user_id', user.id)
+    .select('*, feeds(title)')
     .gte('relevance_score', scoreFilter)
     .order('relevance_score', { ascending: false })
     .order('published_at', { ascending: false })

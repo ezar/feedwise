@@ -18,8 +18,7 @@ export default async function HomePage() {
 
   const { data: articles } = await supabase
     .from('articles')
-    .select('*, feeds!inner(user_id, title)')
-    .eq('feeds.user_id', user!.id)
+    .select('*, feeds(title)')
     .gte('relevance_score', threshold)
     .order('relevance_score', { ascending: false })
     .order('published_at', { ascending: false })

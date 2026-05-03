@@ -27,7 +27,7 @@ export default async function FeedDetailPage({
 
   const { data: articles } = await supabase
     .from('articles')
-    .select('*, feeds!inner(user_id, title)')
+    .select('*')
     .eq('feed_id', params.id)
     .order('published_at', { ascending: false })
     .limit(100)
