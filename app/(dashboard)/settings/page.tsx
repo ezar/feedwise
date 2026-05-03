@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { InterestsForm } from '@/components/settings/InterestsForm'
 import { OPMLImport } from '@/components/feeds/OPMLImport'
+import { SyncAllButton } from '@/components/settings/SyncAllButton'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 export const dynamic = 'force-dynamic'
@@ -29,6 +30,22 @@ export default async function SettingsPage() {
             initialInterests={profile?.interests ?? ''}
             initialThreshold={profile?.threshold ?? 50}
           />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Sincronización</CardTitle>
+          <CardDescription>
+            Los feeds se actualizan automáticamente cada hora vía QStash. Puedes forzarlo manualmente.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <SyncAllButton />
+          <p className="text-xs text-muted-foreground">
+            Proceso en segundo plano — puede tardar varios minutos con muchos feeds.
+            También puedes actualizar feeds individuales desde su página de detalle.
+          </p>
         </CardContent>
       </Card>
 

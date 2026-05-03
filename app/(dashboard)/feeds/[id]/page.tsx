@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
 import { ArticleList } from '@/components/articles/ArticleList'
+import { FetchButton } from '@/components/feeds/FetchButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -73,15 +74,18 @@ export default async function FeedDetailPage({
                   })}
                 </span>
               )}
-              <a
-                href={feed.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 ml-auto"
-              >
-                <ExternalLink className="h-3 w-3" />
-                Ver fuente
-              </a>
+              <div className="flex items-center gap-2 ml-auto">
+                <FetchButton feedId={params.id} />
+                <a
+                  href={feed.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Ver fuente
+                </a>
+              </div>
             </div>
           </div>
         </div>
