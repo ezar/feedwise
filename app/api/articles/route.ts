@@ -24,8 +24,8 @@ export async function GET(req: Request) {
   let query = supabase
     .from('articles')
     .select('*, feeds(title)')
-    .gte('relevance_score', scoreFilter)
-    .order('relevance_score', { ascending: false })
+    .or(`relevance_score.gte.${scoreFilter},relevance_score.is.null`)
+    .order('relevance_score', { ascending: false, nullsFirst: false })
     .order('published_at', { ascending: false })
     .range(offset, offset + pageSize - 1)
 
