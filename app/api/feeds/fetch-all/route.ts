@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { parseRSSFeed } from '@/lib/rss/parser'
 
 export async function POST() {
@@ -13,13 +14,14 @@ export async function POST() {
 
   if (!feeds?.length) return Response.json({ ok: true, total: 0, inserted: 0 })
 
+  const service = createServiceClient()
   let totalInserted = 0
 
   await Promise.allSettled(
     feeds.map(async (feed) => {
       const items = await parseRSSFeed(feed.url as string)
       for (const item of items) {
-        const { error } = await supabase
+        const { error } = await service
           .from('articles')
           .upsert(
             {
@@ -34,7 +36,7 @@ export async function POST() {
           )
         if (!error) totalInserted++
       }
-      await supabase
+      await service
         .from('feeds')
         .update({ last_fetched_at: new Date().toISOString() })
         .eq('id', feed.id)

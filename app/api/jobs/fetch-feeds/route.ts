@@ -1,6 +1,6 @@
 import { Receiver } from '@upstash/qstash'
 import { NextRequest } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { parseRSSFeed } from '@/lib/rss/parser'
 import { scoreArticle } from '@/lib/ai/scorer'
 
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'feedId required' }, { status: 400 })
   }
 
-  const supabase = createClient()
+  const supabase = createServiceClient()
 
   const { data: feed, error } = await supabase
     .from('feeds')
