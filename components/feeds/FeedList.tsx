@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Trash2, Rss, Clock, Sparkles } from 'lucide-react'
+import { Trash2, Rss, Clock, Sparkles, ChevronRight } from 'lucide-react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/providers/ToastProvider'
@@ -62,8 +63,8 @@ export function FeedList({ feeds, onDeleted }: FeedListProps) {
             ? <Sparkles className="h-4 w-4 shrink-0 text-primary" />
             : <Rss className="h-4 w-4 shrink-0 text-muted-foreground" />
           }
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">
+          <Link href={`/feeds/${feed.id}`} className="flex-1 min-w-0 group">
+            <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
               {feed.title ?? feed.url}
             </p>
             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
@@ -90,7 +91,8 @@ export function FeedList({ feeds, onDeleted }: FeedListProps) {
                 </span>
               )}
             </div>
-          </div>
+          </Link>
+          <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
           <Button
             variant="ghost"
             size="icon"
