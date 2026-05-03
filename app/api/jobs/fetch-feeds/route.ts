@@ -1,13 +1,26 @@
-import { verifySignatureAppRouter } from '@upstash/qstash/nextjs'
+import { Receiver } from '@upstash/qstash'
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { parseRSSFeed } from '@/lib/rss/parser'
 import { scoreArticle } from '@/lib/ai/scorer'
 
-async function handler(req: NextRequest) {
-  const body = await req.json() as { feedId?: string }
-  const { feedId } = body
+export const dynamic = 'force-dynamic'
 
+export async function POST(req: NextRequest) {
+  const receiver = new Receiver({
+    currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
+    nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY!,
+  })
+
+  const rawBody = await req.text()
+  const signature = req.headers.get('upstash-signature') ?? ''
+
+  const isValid = await receiver.verify({ signature, body: rawBody }).catch(() => false)
+  if (!isValid) {
+    return Response.json({ error: 'Invalid signature' }, { status: 401 })
+  }
+
+  const { feedId } = JSON.parse(rawBody) as { feedId?: string }
   if (!feedId) {
     return Response.json({ error: 'feedId required' }, { status: 400 })
   }
@@ -54,11 +67,7 @@ async function handler(req: NextRequest) {
 
     await supabase
       .from('articles')
-      .update({
-        relevance_score: score,
-        ai_summary: summary,
-        ai_processed: true,
-      })
+      .update({ relevance_score: score, ai_summary: summary, ai_processed: true })
       .eq('id', article.id)
 
     processed++
@@ -71,5 +80,3 @@ async function handler(req: NextRequest) {
 
   return Response.json({ ok: true, feedId, processed })
 }
-
-export const POST = verifySignatureAppRouter(handler)
