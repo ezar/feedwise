@@ -39,6 +39,7 @@ export async function POST(req: Request) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
 
+  let scheduleWarning: string | undefined
   try {
     const scheduleId = await scheduleHourlyFetch(feed.id)
     await supabase
@@ -48,7 +49,8 @@ export async function POST(req: Request) {
     feed.qstash_schedule_id = scheduleId
   } catch (err) {
     console.error('Failed to schedule QStash job:', err)
+    scheduleWarning = 'Feed guardado pero no se pudo programar la actualización automática. Comprueba la configuración de QStash.'
   }
 
-  return Response.json({ feed }, { status: 201 })
+  return Response.json({ feed, warning: scheduleWarning }, { status: 201 })
 }

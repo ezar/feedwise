@@ -60,8 +60,16 @@ export async function POST(req: NextRequest) {
     if (!article || article.ai_processed) continue
 
     const profile = feed.user_profile as { interests: string } | null
-    const interests = profile?.interests ?? ''
-    if (!interests) continue
+    const interests = profile?.interests?.trim() ?? ''
+
+    if (!interests) {
+      // No interests configured: mark processed so articles don't stay pending forever
+      await supabase
+        .from('articles')
+        .update({ ai_processed: true })
+        .eq('id', article.id)
+      continue
+    }
 
     const { score, summary } = await scoreArticle(item, interests)
 

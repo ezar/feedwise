@@ -28,12 +28,16 @@ export function FeedForm({ onAdded }: FeedFormProps) {
         credentials: 'include',
         body: JSON.stringify({ url, title: title || undefined, feed_type: 'manual' }),
       })
-      const data = await res.json() as { error?: string }
+      const data = await res.json() as { error?: string; warning?: string }
       if (!res.ok) throw new Error(data.error ?? 'Error añadiendo feed')
       setUrl('')
       setTitle('')
       onAdded()
-      toast({ title: 'Feed añadido correctamente' })
+      toast({
+        title: 'Feed añadido correctamente',
+        description: data.warning,
+        variant: data.warning ? 'destructive' : undefined,
+      })
     } catch (err) {
       toast({
         title: 'Error al añadir feed',
