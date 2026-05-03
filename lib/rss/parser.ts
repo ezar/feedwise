@@ -14,17 +14,12 @@ export interface ParsedItem {
 }
 
 export async function parseRSSFeed(url: string): Promise<ParsedItem[]> {
-  try {
-    const feed = await parser.parseURL(url)
-    return feed.items.map((item) => ({
-      guid: item.guid ?? item.link ?? item.title ?? crypto.randomUUID(),
-      title: item.title ?? 'Sin título',
-      url: item.link ?? url,
-      description: item.contentSnippet ?? item.content ?? null,
-      publishedAt: item.pubDate ?? item.isoDate ?? null,
-    }))
-  } catch (error) {
-    console.error(`Error parsing feed ${url}:`, error)
-    return []
-  }
+  const feed = await parser.parseURL(url)
+  return feed.items.map((item) => ({
+    guid: item.guid ?? item.link ?? item.title ?? crypto.randomUUID(),
+    title: item.title ?? 'Sin título',
+    url: item.link ?? url,
+    description: item.contentSnippet ?? item.content ?? null,
+    publishedAt: item.pubDate ?? item.isoDate ?? null,
+  }))
 }

@@ -37,7 +37,19 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'Feed not found' }, { status: 404 })
   }
 
-  const items = await parseRSSFeed(feed.url as string)
+  let items
+  try {
+    items = await parseRSSFeed(feed.url as string)
+    await supabase.from('feeds').update({ last_error: null }).eq('id', feedId)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    await supabase
+      .from('feeds')
+      .update({ last_fetched_at: new Date().toISOString(), last_error: msg })
+      .eq('id', feedId)
+    return Response.json({ error: msg, feedId }, { status: 422 })
+  }
+
   let processed = 0
 
   for (const item of items) {

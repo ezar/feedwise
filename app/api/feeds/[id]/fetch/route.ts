@@ -19,10 +19,22 @@ export async function POST(
 
   if (error || !feed) return Response.json({ error: 'Feed not found' }, { status: 404 })
 
-  const items = await parseRSSFeed(feed.url as string)
   const service = createServiceClient()
-  let inserted = 0
 
+  let items
+  try {
+    items = await parseRSSFeed(feed.url as string)
+    await service.from('feeds').update({ last_error: null }).eq('id', feed.id)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    await service
+      .from('feeds')
+      .update({ last_fetched_at: new Date().toISOString(), last_error: msg })
+      .eq('id', feed.id)
+    return Response.json({ error: msg }, { status: 422 })
+  }
+
+  let inserted = 0
   for (const item of items) {
     const { error: upsertError } = await service
       .from('articles')

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Trash2, Rss, Clock, Sparkles, ChevronRight } from 'lucide-react'
+import { Trash2, Rss, Clock, Sparkles, ChevronRight, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -15,6 +15,7 @@ interface Feed {
   feed_type: 'manual' | 'topic'
   topic_query?: string | null
   last_fetched_at?: string | null
+  last_error?: string | null
 }
 
 interface FeedListProps {
@@ -56,39 +57,45 @@ export function FeedList({ feeds, onDeleted }: FeedListProps) {
           key={feed.id}
           className={cn(
             'flex items-center gap-3 p-3 border rounded-lg transition-opacity',
+            feed.last_error && 'border-destructive/40 bg-destructive/5',
             deleting === feed.id && 'opacity-40 pointer-events-none'
           )}
         >
-          {feed.feed_type === 'topic'
-            ? <Sparkles className="h-4 w-4 shrink-0 text-primary" />
-            : <Rss className="h-4 w-4 shrink-0 text-muted-foreground" />
+          {feed.last_error
+            ? <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
+            : feed.feed_type === 'topic'
+              ? <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+              : <Rss className="h-4 w-4 shrink-0 text-muted-foreground" />
           }
           <Link href={`/feeds/${feed.id}`} className="flex-1 min-w-0 group">
             <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
               {feed.title ?? feed.url}
             </p>
             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-              <Badge
-                variant={feed.feed_type === 'topic' ? 'default' : 'outline'}
-                className="text-xs"
-              >
-                {feed.feed_type === 'topic' ? 'Tema IA' : 'Manual'}
-              </Badge>
-              {feed.topic_query && (
-                <span className="text-xs text-muted-foreground truncate max-w-[200px]">
-                  {feed.topic_query}
+              {feed.last_error ? (
+                <span className="text-xs text-destructive truncate max-w-[260px]">
+                  {feed.last_error}
                 </span>
-              )}
-              {feed.last_fetched_at && (
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  {new Date(feed.last_fetched_at).toLocaleString('es-ES', {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
+              ) : (
+                <>
+                  <Badge variant={feed.feed_type === 'topic' ? 'default' : 'outline'} className="text-xs">
+                    {feed.feed_type === 'topic' ? 'Tema IA' : 'Manual'}
+                  </Badge>
+                  {feed.topic_query && (
+                    <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                      {feed.topic_query}
+                    </span>
+                  )}
+                  {feed.last_fetched_at && (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {new Date(feed.last_fetched_at).toLocaleString('es-ES', {
+                        month: 'short', day: 'numeric',
+                        hour: '2-digit', minute: '2-digit',
+                      })}
+                    </span>
+                  )}
+                </>
               )}
             </div>
           </Link>

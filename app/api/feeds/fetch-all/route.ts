@@ -16,32 +16,42 @@ export async function POST() {
 
   const service = createServiceClient()
   let totalInserted = 0
+  let failed = 0
 
   await Promise.allSettled(
     feeds.map(async (feed) => {
-      const items = await parseRSSFeed(feed.url as string)
-      for (const item of items) {
-        const { error } = await service
-          .from('articles')
-          .upsert(
-            {
-              feed_id: feed.id,
-              guid: item.guid,
-              title: item.title,
-              url: item.url,
-              description: item.description,
-              published_at: item.publishedAt,
-            },
-            { onConflict: 'guid', ignoreDuplicates: true }
-          )
-        if (!error) totalInserted++
+      try {
+        const items = await parseRSSFeed(feed.url as string)
+        for (const item of items) {
+          const { error } = await service
+            .from('articles')
+            .upsert(
+              {
+                feed_id: feed.id,
+                guid: item.guid,
+                title: item.title,
+                url: item.url,
+                description: item.description,
+                published_at: item.publishedAt,
+              },
+              { onConflict: 'guid', ignoreDuplicates: true }
+            )
+          if (!error) totalInserted++
+        }
+        await service
+          .from('feeds')
+          .update({ last_fetched_at: new Date().toISOString(), last_error: null })
+          .eq('id', feed.id)
+      } catch (err) {
+        failed++
+        const msg = err instanceof Error ? err.message : String(err)
+        await service
+          .from('feeds')
+          .update({ last_fetched_at: new Date().toISOString(), last_error: msg })
+          .eq('id', feed.id)
       }
-      await service
-        .from('feeds')
-        .update({ last_fetched_at: new Date().toISOString() })
-        .eq('id', feed.id)
     })
   )
 
-  return Response.json({ ok: true, total: feeds.length, inserted: totalInserted })
+  return Response.json({ ok: true, total: feeds.length, inserted: totalInserted, failed })
 }

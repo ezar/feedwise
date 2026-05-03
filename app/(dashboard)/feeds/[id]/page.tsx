@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Rss, Sparkles, Clock, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Rss, Sparkles, Clock, ExternalLink, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
@@ -91,10 +91,20 @@ export default async function FeedDetailPage({
         </div>
       </div>
 
+      {feed.last_error && (
+        <div className="flex items-start gap-2 mb-4 p-3 rounded-lg border border-destructive/40 bg-destructive/5 text-destructive text-sm">
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium">Error al sincronizar este feed</p>
+            <p className="text-xs mt-0.5 opacity-80">{feed.last_error}</p>
+          </div>
+        </div>
+      )}
+
       <ArticleList
         initialArticles={articles ?? []}
         emptyMessage="Sin artículos todavía"
-        emptyHint="QStash aún no ha procesado este feed. Se actualizará en la próxima hora."
+        emptyHint="Pulsa «Actualizar ahora» para descargar artículos manualmente."
       />
     </div>
   )
