@@ -5,7 +5,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { FeedForm } from '@/components/feeds/FeedForm'
 import { FeedList } from '@/components/feeds/FeedList'
 import { TopicInput } from '@/components/feeds/TopicInput'
-import { OPMLImport } from '@/components/feeds/OPMLImport'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 interface Feed {
@@ -54,7 +53,6 @@ export default function FeedsPage() {
         <TabsList className="mb-4 w-full">
           <TabsTrigger value="topic" className="flex-1">Por tema</TabsTrigger>
           <TabsTrigger value="manual" className="flex-1">Manual</TabsTrigger>
-          <TabsTrigger value="opml" className="flex-1">Importar OPML</TabsTrigger>
         </TabsList>
 
         <TabsContent value="topic">
@@ -77,18 +75,6 @@ export default function FeedsPage() {
             </CardHeader>
             <CardContent>
               <FeedForm onAdded={loadFeeds} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="opml">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Importar desde Feedly</CardTitle>
-              <CardDescription>Sube tu archivo OPML exportado desde Feedly u otro lector.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <OPMLImport onImported={loadFeeds} />
             </CardContent>
           </Card>
         </TabsContent>
