@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Loader2, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface TopicPreview {
   query: string
@@ -21,6 +21,7 @@ export function TopicInput({ onConfirm }: TopicInputProps) {
   const [loading, setLoading] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [previews, setPreviews] = useState<TopicPreview[]>([])
+  const [selected, setSelected] = useState<Set<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
@@ -28,6 +29,7 @@ export function TopicInput({ onConfirm }: TopicInputProps) {
     if (!text.trim()) return
     setLoading(true)
     setPreviews([])
+    setSelected(new Set())
     setError(null)
     setSuccess(false)
     try {
@@ -41,6 +43,7 @@ export function TopicInput({ onConfirm }: TopicInputProps) {
       if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`)
       if (!data.preview?.length) throw new Error('Claude no encontró queries para ese texto')
       setPreviews(data.preview)
+      setSelected(new Set(data.preview.map((p) => p.url)))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
     } finally {
@@ -48,14 +51,29 @@ export function TopicInput({ onConfirm }: TopicInputProps) {
     }
   }
 
+  const toggle = (url: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(url)) {
+        next.delete(url)
+      } else {
+        next.add(url)
+      }
+      return next
+    })
+  }
+
   const handleConfirm = async () => {
+    const chosen = previews.filter((p) => selected.has(p.url))
+    if (!chosen.length) return
     setConfirming(true)
     setError(null)
     try {
-      await onConfirm(previews)
+      await onConfirm(chosen)
       setSuccess(true)
       setText('')
       setPreviews([])
+      setSelected(new Set())
       setTimeout(() => setSuccess(false), 3000)
     } catch {
       setError('Error creando los feeds')
@@ -95,21 +113,32 @@ export function TopicInput({ onConfirm }: TopicInputProps) {
 
       {previews.length > 0 && (
         <div className="flex flex-col gap-3 border rounded-lg p-4 bg-muted/40">
-          <p className="text-sm font-medium flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-            Claude sugiere {previews.length} feed{previews.length > 1 ? 's' : ''}:
+          <p className="text-sm font-medium">
+            Claude sugiere {previews.length} feed{previews.length > 1 ? 's' : ''} — selecciona los que quieras:
           </p>
-          <ul className="flex flex-col gap-1.5">
+          <ul className="flex flex-col gap-2">
             {previews.map((p) => (
-              <li key={p.url} className="flex items-center gap-2">
-                <Badge variant="secondary" className="shrink-0">{p.query}</Badge>
-                <span className="text-xs text-muted-foreground truncate">{p.url}</span>
+              <li
+                key={p.url}
+                className="flex items-center gap-3 cursor-pointer"
+                onClick={() => toggle(p.url)}
+              >
+                <Checkbox
+                  checked={selected.has(p.url)}
+                  onCheckedChange={() => toggle(p.url)}
+                />
+                <span className="text-sm font-medium flex-1">{p.query}</span>
               </li>
             ))}
           </ul>
-          <Button onClick={handleConfirm} disabled={confirming} size="sm" className="self-start mt-1">
+          <Button
+            onClick={handleConfirm}
+            disabled={confirming || selected.size === 0}
+            size="sm"
+            className="self-start mt-1"
+          >
             {confirming && <Loader2 className="h-4 w-4 animate-spin" />}
-            Confirmar y crear feeds
+            Crear {selected.size} feed{selected.size !== 1 ? 's' : ''}
           </Button>
         </div>
       )}
