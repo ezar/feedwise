@@ -38,7 +38,7 @@ export default async function SettingsPage() {
           <CardDescription>Importa tus suscripciones desde Feedly u otro lector vía OPML.</CardDescription>
         </CardHeader>
         <CardContent>
-          <OPMLImport onImported={() => {}} />
+          <OPMLImport />
         </CardContent>
       </Card>
     </div>

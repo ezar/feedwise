@@ -7,7 +7,7 @@ import { useToast } from '@/components/providers/ToastProvider'
 import { cn } from '@/lib/utils'
 
 interface OPMLImportProps {
-  onImported: () => void
+  onImported?: () => void
 }
 
 type Status = 'idle' | 'loading' | 'success' | 'error'
@@ -40,7 +40,7 @@ export function OPMLImport({ onImported }: OPMLImportProps) {
       setResult({ inserted, skipped })
       setStatus('success')
       toast({ title: `${inserted} feed${inserted !== 1 ? 's' : ''} importados` })
-      onImported()
+      onImported?.()
     } catch (err) {
       setStatus('error')
       toast({
