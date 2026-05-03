@@ -25,6 +25,7 @@ export function FeedForm({ onAdded }: FeedFormProps) {
       const res = await fetch('/api/feeds', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ url, title: title || undefined, feed_type: 'manual' }),
       })
       const data = await res.json() as { error?: string }

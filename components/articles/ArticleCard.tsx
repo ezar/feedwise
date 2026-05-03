@@ -38,7 +38,7 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
     const next = !saved
     setSaved(next)
     onSaveToggle?.(article.id, next)
-    const res = await fetch(`/api/articles/${article.id}`, {
+    const res = await fetch(`/api/articles/${article.id}`, { credentials: 'include',
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ is_saved: next }),
@@ -55,7 +55,7 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
     if (!read) {
       setRead(true)
       onMarkRead?.(article.id)
-      fetch(`/api/articles/${article.id}`, {
+      fetch(`/api/articles/${article.id}`, { credentials: 'include',
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_read: true }),

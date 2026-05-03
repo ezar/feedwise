@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { parseRSSFeed } from '@/lib/rss/parser'
 
 export async function POST() {
   const supabase = createClient()
@@ -7,21 +8,38 @@ export async function POST() {
 
   const { data: feeds } = await supabase
     .from('feeds')
-    .select('id')
+    .select('id, url')
     .eq('user_id', user.id)
 
-  if (!feeds?.length) return Response.json({ ok: true, triggered: 0 })
+  if (!feeds?.length) return Response.json({ ok: true, total: 0, inserted: 0 })
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? `https://${process.env.VERCEL_URL}`
+  let totalInserted = 0
 
-  // Fire-and-forget each feed fetch in parallel (non-blocking)
-  const results = await Promise.allSettled(
-    feeds.map((f) =>
-      fetch(`${appUrl}/api/feeds/${f.id}/fetch`, { method: 'POST' })
-    )
+  await Promise.allSettled(
+    feeds.map(async (feed) => {
+      const items = await parseRSSFeed(feed.url as string)
+      for (const item of items) {
+        const { error } = await supabase
+          .from('articles')
+          .upsert(
+            {
+              feed_id: feed.id,
+              guid: item.guid,
+              title: item.title,
+              url: item.url,
+              description: item.description,
+              published_at: item.publishedAt,
+            },
+            { onConflict: 'guid', ignoreDuplicates: true }
+          )
+        if (!error) totalInserted++
+      }
+      await supabase
+        .from('feeds')
+        .update({ last_fetched_at: new Date().toISOString() })
+        .eq('id', feed.id)
+    })
   )
 
-  const triggered = results.filter((r) => r.status === 'fulfilled').length
-
-  return Response.json({ ok: true, triggered, total: feeds.length })
+  return Response.json({ ok: true, total: feeds.length, inserted: totalInserted })
 }

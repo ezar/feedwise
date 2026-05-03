@@ -34,7 +34,7 @@ export function OPMLImport({ onImported }: OPMLImportProps) {
     formData.append('file', file)
 
     try {
-      const res = await fetch('/api/opml/import', { method: 'POST', body: formData })
+      const res = await fetch('/api/opml/import', { method: 'POST', credentials: 'include', body: formData })
       const data = await res.json() as { inserted?: number; skipped?: number; error?: string }
       if (!res.ok) throw new Error(data.error ?? 'Error importando')
       const inserted = data.inserted ?? 0

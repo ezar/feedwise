@@ -29,7 +29,7 @@ export function FeedList({ feeds, onDeleted }: FeedListProps) {
   const handleDelete = async (feed: Feed) => {
     setDeleting(feed.id)
     try {
-      const res = await fetch(`/api/feeds/${feed.id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/feeds/${feed.id}`, { method: 'DELETE', credentials: 'include' })
       if (!res.ok) throw new Error()
       onDeleted(feed.id)
       toast({ title: 'Feed eliminado', description: feed.title ?? feed.url })

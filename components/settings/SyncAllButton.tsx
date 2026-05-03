@@ -13,12 +13,12 @@ export function SyncAllButton() {
   const handleSync = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/feeds/fetch-all', { method: 'POST' })
-      const data = await res.json() as { triggered?: number; total?: number; error?: string }
+      const res = await fetch('/api/feeds/fetch-all', { method: 'POST', credentials: 'include' })
+      const data = await res.json() as { total?: number; inserted?: number; error?: string }
       if (!res.ok) throw new Error(data.error)
       toast({
-        title: 'Sincronización iniciada',
-        description: `Actualizando ${data.triggered} de ${data.total} feeds en segundo plano`,
+        title: 'Feeds actualizados',
+        description: `${data.inserted} artículos nuevos en ${data.total} feeds`,
       })
     } catch (err) {
       toast({

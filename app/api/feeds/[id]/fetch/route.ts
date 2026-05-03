@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { parseRSSFeed } from '@/lib/rss/parser'
-import { scoreArticle } from '@/lib/ai/scorer'
 
 export async function POST(
   _req: Request,
@@ -12,7 +11,7 @@ export async function POST(
 
   const { data: feed, error } = await supabase
     .from('feeds')
-    .select('*, user_profile!inner(interests)')
+    .select('id, url, user_id')
     .eq('id', params.id)
     .eq('user_id', user.id)
     .single()
@@ -20,10 +19,10 @@ export async function POST(
   if (error || !feed) return Response.json({ error: 'Feed not found' }, { status: 404 })
 
   const items = await parseRSSFeed(feed.url as string)
-  let processed = 0
+  let inserted = 0
 
   for (const item of items) {
-    const { data: article } = await supabase
+    const { error: upsertError } = await supabase
       .from('articles')
       .upsert(
         {
@@ -36,22 +35,7 @@ export async function POST(
         },
         { onConflict: 'guid', ignoreDuplicates: true }
       )
-      .select('id, ai_processed')
-      .single()
-
-    if (!article || article.ai_processed) continue
-
-    const profile = feed.user_profile as { interests: string } | null
-    const interests = profile?.interests ?? ''
-    if (!interests) continue
-
-    const { score, summary } = await scoreArticle(item, interests)
-    await supabase
-      .from('articles')
-      .update({ relevance_score: score, ai_summary: summary, ai_processed: true })
-      .eq('id', article.id)
-
-    processed++
+    if (!upsertError) inserted++
   }
 
   await supabase
@@ -59,5 +43,5 @@ export async function POST(
     .update({ last_fetched_at: new Date().toISOString() })
     .eq('id', feed.id)
 
-  return Response.json({ ok: true, total: items.length, processed })
+  return Response.json({ ok: true, total: items.length, inserted })
 }

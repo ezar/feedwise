@@ -1,11 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Loader2, Sparkles, CheckCircle2 } from 'lucide-react'
+import { Loader2, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { useToast } from '@/components/providers/ToastProvider'
 
 interface TopicPreview {
   query: string
@@ -22,27 +21,28 @@ export function TopicInput({ onConfirm }: TopicInputProps) {
   const [loading, setLoading] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [previews, setPreviews] = useState<TopicPreview[]>([])
-  const { toast } = useToast()
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   const handleGenerate = async () => {
     if (!text.trim()) return
     setLoading(true)
     setPreviews([])
+    setError(null)
+    setSuccess(false)
     try {
       const res = await fetch('/api/feeds/generate-topics', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ text }),
       })
       const data = await res.json() as { preview?: TopicPreview[]; error?: string }
-      if (!res.ok) throw new Error(data.error ?? 'Error generando temas')
-      setPreviews(data.preview ?? [])
+      if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`)
+      if (!data.preview?.length) throw new Error('Claude no encontró queries para ese texto')
+      setPreviews(data.preview)
     } catch (err) {
-      toast({
-        title: 'Error generando temas',
-        description: err instanceof Error ? err.message : undefined,
-        variant: 'destructive',
-      })
+      setError(err instanceof Error ? err.message : 'Error desconocido')
     } finally {
       setLoading(false)
     }
@@ -50,13 +50,15 @@ export function TopicInput({ onConfirm }: TopicInputProps) {
 
   const handleConfirm = async () => {
     setConfirming(true)
+    setError(null)
     try {
       await onConfirm(previews)
-      toast({ title: `${previews.length} feed${previews.length > 1 ? 's' : ''} creados` })
+      setSuccess(true)
       setText('')
       setPreviews([])
+      setTimeout(() => setSuccess(false), 3000)
     } catch {
-      toast({ title: 'Error creando feeds', variant: 'destructive' })
+      setError('Error creando los feeds')
     } finally {
       setConfirming(false)
     }
@@ -67,24 +69,32 @@ export function TopicInput({ onConfirm }: TopicInputProps) {
       <Textarea
         placeholder="Ej: quiero noticias de IA aplicada a productividad, sin fundraising ni inversión..."
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => { setText(e.target.value); setError(null) }}
         rows={3}
         className="resize-none"
       />
-      <Button
-        onClick={handleGenerate}
-        disabled={loading || !text.trim()}
-        className="self-start"
-      >
-        {loading
-          ? <Loader2 className="h-4 w-4 animate-spin" />
-          : <Sparkles className="h-4 w-4" />
-        }
-        {loading ? 'Analizando...' : 'Generar con IA'}
+
+      <Button onClick={handleGenerate} disabled={loading || !text.trim()} className="self-start">
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+        {loading ? 'Analizando con Claude…' : 'Generar con IA'}
       </Button>
 
+      {error && (
+        <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 rounded-md p-3">
+          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 rounded-md p-3">
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          Feeds creados correctamente
+        </div>
+      )}
+
       {previews.length > 0 && (
-        <div className="flex flex-col gap-3 border rounded-lg p-4 bg-muted/40 mt-1">
+        <div className="flex flex-col gap-3 border rounded-lg p-4 bg-muted/40">
           <p className="text-sm font-medium flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-green-500" />
             Claude sugiere {previews.length} feed{previews.length > 1 ? 's' : ''}:
@@ -97,12 +107,7 @@ export function TopicInput({ onConfirm }: TopicInputProps) {
               </li>
             ))}
           </ul>
-          <Button
-            onClick={handleConfirm}
-            disabled={confirming}
-            size="sm"
-            className="self-start mt-1"
-          >
+          <Button onClick={handleConfirm} disabled={confirming} size="sm" className="self-start mt-1">
             {confirming && <Loader2 className="h-4 w-4 animate-spin" />}
             Confirmar y crear feeds
           </Button>

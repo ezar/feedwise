@@ -21,12 +21,12 @@ export function FetchButton({ feedId, variant = 'outline', size = 'sm' }: FetchB
   const handleFetch = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/feeds/${feedId}/fetch`, { method: 'POST' })
-      const data = await res.json() as { total?: number; processed?: number; error?: string }
+      const res = await fetch(`/api/feeds/${feedId}/fetch`, { method: 'POST', credentials: 'include' })
+      const data = await res.json() as { total?: number; inserted?: number; error?: string }
       if (!res.ok) throw new Error(data.error)
       toast({
         title: 'Feed actualizado',
-        description: `${data.total} artículos · ${data.processed} puntuados`,
+        description: `${data.total} artículos encontrados · ${data.inserted} nuevos`,
       })
       router.refresh()
     } catch (err) {

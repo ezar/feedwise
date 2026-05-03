@@ -26,7 +26,7 @@ export default function FeedsPage() {
   const [feeds, setFeeds] = useState<Feed[]>([])
 
   const loadFeeds = useCallback(async () => {
-    const res = await fetch('/api/feeds')
+    const res = await fetch('/api/feeds', { credentials: 'include' })
     const data = await res.json() as { feeds?: Feed[] }
     setFeeds(data.feeds ?? [])
   }, [])
@@ -36,7 +36,7 @@ export default function FeedsPage() {
   const handleTopicConfirm = async (previews: TopicPreview[]) => {
     await Promise.all(
       previews.map((p) =>
-        fetch('/api/feeds', {
+        fetch('/api/feeds', { credentials: 'include',
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: p.url, title: p.title, feed_type: 'topic', topic_query: p.query }),
