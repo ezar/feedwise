@@ -58,6 +58,22 @@ export default async function SettingsPage() {
           <OPMLImport />
         </CardContent>
       </Card>
+
+      <p className="text-xs text-muted-foreground text-center pb-2">
+        v{buildVersion()}
+      </p>
     </div>
   )
+}
+
+function buildVersion(): string {
+  const raw = process.env.NEXT_PUBLIC_BUILD_TIME
+  if (!raw) return 'dev'
+  const d = new Date(raw)
+  const yy = String(d.getUTCFullYear()).slice(2)
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const dd = String(d.getUTCDate()).padStart(2, '0')
+  const hh = String(d.getUTCHours()).padStart(2, '0')
+  const min = String(d.getUTCMinutes()).padStart(2, '0')
+  return `${yy}.${mm}.${dd}.${hh}${min}`
 }

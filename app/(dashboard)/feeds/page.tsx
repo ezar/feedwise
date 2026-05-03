@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { FeedForm } from '@/components/feeds/FeedForm'
 import { FeedList } from '@/components/feeds/FeedList'
+import { FeedListSkeleton } from '@/components/feeds/FeedSkeleton'
 import { TopicInput } from '@/components/feeds/TopicInput'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
@@ -24,11 +25,14 @@ interface TopicPreview {
 
 export default function FeedsPage() {
   const [feeds, setFeeds] = useState<Feed[]>([])
+  const [loading, setLoading] = useState(true)
 
   const loadFeeds = useCallback(async () => {
+    setLoading(true)
     const res = await fetch('/api/feeds', { credentials: 'include' })
     const data = await res.json() as { feeds?: Feed[] }
     setFeeds(data.feeds ?? [])
+    setLoading(false)
   }, [])
 
   useEffect(() => { void loadFeeds() }, [loadFeeds])
@@ -81,8 +85,13 @@ export default function FeedsPage() {
       </Tabs>
 
       <div className="mt-8">
-        <h3 className="text-base font-medium mb-3">Feeds activos ({feeds.length})</h3>
-        <FeedList feeds={feeds} onDeleted={(id) => setFeeds((f) => f.filter((x) => x.id !== id))} />
+        <h3 className="text-base font-medium mb-3">
+          Feeds activos {!loading && `(${feeds.length})`}
+        </h3>
+        {loading
+          ? <FeedListSkeleton />
+          : <FeedList feeds={feeds} onDeleted={(id) => setFeeds((f) => f.filter((x) => x.id !== id))} />
+        }
       </div>
     </div>
   )
