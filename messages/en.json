@@ -179,7 +179,12 @@
     "lessThan1min": "less than 1 min ago",
     "minutes": "{m} min ago",
     "hours": "{h}h ago",
-    "days": "{d}d ago"
+    "days": "{d}d ago",
+    "activeSchedules": "Active schedules",
+    "schedulesHint": "Some feeds have no schedule — re-register to enable automatic updates.",
+    "reschedule": "Re-register",
+    "rescheduleResult": "{scheduled} of {total} feeds registered",
+    "rescheduleError": "Error re-registering"
   },
   "sync": {
     "noFeeds": "No feeds to sync",

@@ -179,7 +179,12 @@
     "lessThan1min": "hace menos de 1 min",
     "minutes": "hace {m} min",
     "hours": "hace {h}h",
-    "days": "hace {d}d"
+    "days": "hace {d}d",
+    "activeSchedules": "Schedules activos",
+    "schedulesHint": "Algunos feeds no tienen schedule — re-regístralos para activar las actualizaciones automáticas.",
+    "reschedule": "Re-registrar",
+    "rescheduleResult": "{scheduled} de {total} feeds registrados",
+    "rescheduleError": "Error al re-registrar"
   },
   "sync": {
     "noFeeds": "No hay feeds para sincronizar",

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { CheckCircle2, XCircle, Loader2, RefreshCw, Sparkles, AlertTriangle } from 'lucide-react'
+import { CheckCircle2, XCircle, Loader2, RefreshCw, Sparkles, AlertTriangle, CalendarClock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
@@ -11,6 +11,8 @@ interface DiagData {
   totalArticles: number
   scoredArticles: number
   hasInterests: boolean
+  totalFeeds: number
+  feedsWithSchedule: number
 }
 
 interface TestResult {
@@ -25,7 +27,9 @@ export function DiagnosticsPanel() {
   const [data, setData] = useState<DiagData | null>(null)
   const [loading, setLoading] = useState(true)
   const [testing, setTesting] = useState(false)
+  const [rescheduling, setRescheduling] = useState(false)
   const [testResult, setTestResult] = useState<TestResult | null>(null)
+  const [rescheduleMsg, setRescheduleMsg] = useState<string | null>(null)
   const t = useTranslations('diagnostics')
 
   const timeAgo = (iso: string): string => {
@@ -55,10 +59,26 @@ export function DiagnosticsPanel() {
     setTesting(false)
   }
 
+  const reschedule = async () => {
+    setRescheduling(true)
+    setRescheduleMsg(null)
+    try {
+      const res = await fetch('/api/feeds/reschedule', { method: 'POST', credentials: 'include' })
+      const json = await res.json() as { scheduled: number; total: number; errors?: string[] }
+      setRescheduleMsg(t('rescheduleResult', { scheduled: json.scheduled, total: json.total }))
+      await load()
+    } catch {
+      setRescheduleMsg(t('rescheduleError'))
+    } finally {
+      setRescheduling(false)
+    }
+  }
+
   const cronOk = data?.lastCron
     ? (Date.now() - new Date(data.lastCron).getTime()) < 2 * 60 * 60 * 1000
     : false
 
+  const schedulesOk = data ? data.feedsWithSchedule === data.totalFeeds && data.totalFeeds > 0 : false
   const pendingArticles = (data?.totalArticles ?? 0) - (data?.scoredArticles ?? 0)
 
   return (
@@ -70,8 +90,11 @@ export function DiagnosticsPanel() {
         </div>
       ) : data ? (
         <div className="flex flex-col gap-3">
+          {/* QStash last fire */}
           <Row
-            icon={cronOk ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <AlertTriangle className="h-4 w-4 text-yellow-500" />}
+            icon={cronOk
+              ? <CheckCircle2 className="h-4 w-4 text-green-500" />
+              : <AlertTriangle className="h-4 w-4 text-yellow-500" />}
             label={t('lastCron')}
             value={data.lastCron ? timeAgo(data.lastCron) : t('never')}
             sub={data.lastCron
@@ -79,6 +102,37 @@ export function DiagnosticsPanel() {
               : t('cronNeverHint')}
           />
 
+          {/* Active schedules */}
+          {data.totalFeeds > 0 && (
+            <Row
+              icon={schedulesOk
+                ? <CheckCircle2 className="h-4 w-4 text-green-500" />
+                : <AlertTriangle className="h-4 w-4 text-yellow-500" />}
+              label={t('activeSchedules')}
+              value={`${data.feedsWithSchedule} / ${data.totalFeeds}`}
+              sub={!schedulesOk ? t('schedulesHint') : undefined}
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  disabled={rescheduling}
+                  onClick={reschedule}
+                >
+                  {rescheduling
+                    ? <Loader2 className="h-3 w-3 animate-spin" />
+                    : <CalendarClock className="h-3 w-3" />}
+                  {t('reschedule')}
+                </Button>
+              }
+            />
+          )}
+
+          {rescheduleMsg && (
+            <p className="text-xs text-muted-foreground pl-7">{rescheduleMsg}</p>
+          )}
+
+          {/* Scored articles */}
           <Row
             icon={data.hasInterests
               ? <Sparkles className="h-4 w-4 text-primary" />
@@ -117,7 +171,7 @@ export function DiagnosticsPanel() {
         {testResult && (
           <div className={cn(
             'rounded-lg p-3 text-sm flex flex-col gap-1',
-            testResult.ok ? 'bg-green-50 text-green-900' : 'bg-destructive/10 text-destructive'
+            testResult.ok ? 'bg-green-50 text-green-900 dark:bg-green-950 dark:text-green-100' : 'bg-destructive/10 text-destructive'
           )}>
             {testResult.ok ? (
               <>
@@ -144,14 +198,23 @@ export function DiagnosticsPanel() {
   )
 }
 
-function Row({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub?: string }) {
+function Row({ icon, label, value, sub, action }: {
+  icon: React.ReactNode
+  label: string
+  value: string
+  sub?: string
+  action?: React.ReactNode
+}) {
   return (
     <div className="flex items-start gap-3">
       <div className="mt-0.5 shrink-0">{icon}</div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <span className="text-sm text-muted-foreground">{label}</span>
-          <span className="text-sm font-medium tabular-nums">{value}</span>
+          <div className="flex items-center gap-2">
+            {action}
+            <span className="text-sm font-medium tabular-nums">{value}</span>
+          </div>
         </div>
         {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
       </div>

@@ -8,7 +8,7 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const [feedsRes, , profileRes] = await Promise.all([
+  const [feedsRes, profileRes, allFeedsRes, totalRes, scoredRes] = await Promise.all([
     supabase
       .from('feeds')
       .select('last_fetched_at')
@@ -17,34 +17,33 @@ export async function GET() {
       .order('last_fetched_at', { ascending: false })
       .limit(1),
     supabase
-      .from('articles')
-      .select('ai_processed, relevance_score')
-      .eq('feeds.user_id', user.id),
-    supabase
       .from('user_profile')
       .select('interests')
       .eq('id', user.id)
       .single(),
+    supabase
+      .from('feeds')
+      .select('id, qstash_schedule_id')
+      .eq('user_id', user.id),
+    supabase
+      .from('articles')
+      .select('id', { count: 'exact', head: true }),
+    supabase
+      .from('articles')
+      .select('id', { count: 'exact', head: true })
+      .not('relevance_score', 'is', null),
   ])
 
-  // Count scored vs total via two fast queries
-  const { count: total } = await supabase
-    .from('articles')
-    .select('id', { count: 'exact', head: true })
-
-  const { count: scored } = await supabase
-    .from('articles')
-    .select('id', { count: 'exact', head: true })
-    .not('relevance_score', 'is', null)
-
-  const lastCron = feedsRes.data?.[0]?.last_fetched_at ?? null
-  const hasInterests = !!(profileRes.data?.interests?.trim())
+  const allFeeds = allFeedsRes.data ?? []
+  const feedsWithSchedule = allFeeds.filter((f) => f.qstash_schedule_id).length
 
   return Response.json({
-    lastCron,
-    totalArticles: total ?? 0,
-    scoredArticles: scored ?? 0,
-    hasInterests,
+    lastCron: feedsRes.data?.[0]?.last_fetched_at ?? null,
+    totalArticles: totalRes.count ?? 0,
+    scoredArticles: scoredRes.count ?? 0,
+    hasInterests: !!(profileRes.data?.interests?.trim()),
+    totalFeeds: allFeeds.length,
+    feedsWithSchedule,
   })
 }
 
