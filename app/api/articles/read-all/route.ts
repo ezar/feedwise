@@ -12,7 +12,7 @@ export async function POST(req: Request) {
 
   let query = supabase
     .from('articles')
-    .update({ is_read: true })
+    .update({ is_read: true, read_at: new Date().toISOString() })
     .eq('is_read', false)
 
   // RLS already scopes to user's feeds; optionally narrow to one feed

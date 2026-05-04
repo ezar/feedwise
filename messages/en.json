@@ -3,7 +3,8 @@
     "feed": "Feed",
     "feeds": "My feeds",
     "saved": "Saved",
-    "settings": "Settings"
+    "settings": "Settings",
+    "stats": "Stats"
   },
   "auth": {
     "signInTitle": "Sign in to your account",
@@ -142,7 +143,9 @@
     "importTitle": "Import feeds",
     "importDescription": "Import your subscriptions from Feedly or another reader via OPML.",
     "languageTitle": "Language",
-    "languageDescription": "Change the interface language."
+    "languageDescription": "Change the interface language.",
+    "pushTitle": "Push notifications",
+    "pushDescription": "Get notified when new high-score articles arrive."
   },
   "diagnostics": {
     "loading": "Loading diagnostics…",
@@ -185,5 +188,26 @@
     "es": "Español",
     "en": "English",
     "label": "Idioma / Language"
+  },
+  "stats": {
+    "title": "Reading stats",
+    "streak": "Streak",
+    "streakDays": "days in a row",
+    "totalRead": "Total read",
+    "articles": "articles",
+    "last7days": "Last 7 days",
+    "topSources": "Favourite sources"
+  },
+  "push": {
+    "enable": "Enable notifications",
+    "disable": "Disable notifications",
+    "enabled": "Notifications enabled",
+    "disabled": "Notifications disabled",
+    "active": "Active",
+    "loading": "Loading…",
+    "error": "Error",
+    "notSupported": "Push notifications are not supported in this browser.",
+    "notConfigured": "Push notifications are not configured.",
+    "permissionDenied": "Permission denied. Enable in browser settings."
   }
 }

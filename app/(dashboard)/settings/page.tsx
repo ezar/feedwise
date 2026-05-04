@@ -4,6 +4,7 @@ import { OPMLImport } from '@/components/feeds/OPMLImport'
 import { SyncAllButton } from '@/components/settings/SyncAllButton'
 import { DiagnosticsPanel } from '@/components/settings/DiagnosticsPanel'
 import { LocaleSwitcher } from '@/components/settings/LocaleSwitcher'
+import { PushNotifications } from '@/components/settings/PushNotifications'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { getTranslations } from 'next-intl/server'
 
@@ -65,6 +66,16 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           <OPMLImport />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{t('pushTitle')}</CardTitle>
+          <CardDescription>{t('pushDescription')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PushNotifications />
         </CardContent>
       </Card>
 

@@ -3,7 +3,8 @@
     "feed": "Feed",
     "feeds": "Mis feeds",
     "saved": "Guardados",
-    "settings": "Configuración"
+    "settings": "Configuración",
+    "stats": "Stats"
   },
   "auth": {
     "signInTitle": "Inicia sesión en tu cuenta",
@@ -142,7 +143,9 @@
     "importTitle": "Importar feeds",
     "importDescription": "Importa tus suscripciones desde Feedly u otro lector vía OPML.",
     "languageTitle": "Idioma",
-    "languageDescription": "Cambia el idioma de la interfaz."
+    "languageDescription": "Cambia el idioma de la interfaz.",
+    "pushTitle": "Notificaciones push",
+    "pushDescription": "Recibe avisos cuando lleguen artículos nuevos con puntuación alta."
   },
   "diagnostics": {
     "loading": "Cargando diagnóstico…",
@@ -185,5 +188,26 @@
     "es": "Español",
     "en": "English",
     "label": "Idioma / Language"
+  },
+  "stats": {
+    "title": "Estadísticas de lectura",
+    "streak": "Racha",
+    "streakDays": "días seguidos",
+    "totalRead": "Total leídos",
+    "articles": "artículos",
+    "last7days": "Últimos 7 días",
+    "topSources": "Fuentes favoritas"
+  },
+  "push": {
+    "enable": "Activar notificaciones",
+    "disable": "Desactivar notificaciones",
+    "enabled": "Notificaciones activadas",
+    "disabled": "Notificaciones desactivadas",
+    "active": "Activo",
+    "loading": "Cargando…",
+    "error": "Error",
+    "notSupported": "Tu navegador no admite notificaciones push.",
+    "notConfigured": "Las notificaciones push no están configuradas.",
+    "permissionDenied": "Permiso denegado. Actívalas en los ajustes del navegador."
   }
 }

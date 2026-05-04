@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { parseRSSFeed } from '@/lib/rss/parser'
 import { scoreArticle } from '@/lib/ai/scorer'
+import { sendPushNotification } from '@/lib/push/sender'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
           },
           { onConflict: 'guid', ignoreDuplicates: true }
         )
-        .select('id, ai_processed, title, description')
+        .select('id, ai_processed, title, description, url')
         .single()
         .then((r) => r.data)
     )
@@ -72,6 +73,9 @@ export async function POST(req: NextRequest) {
   // Score unprocessed articles in parallel (cap at 10 concurrent AI calls)
   const toScore = upserted.filter((a) => a && !a.ai_processed)
   let processed = 0
+  const highScoreArticles: Array<{ title: string; url: string }> = []
+
+  const threshold = (feed.user_profile as { threshold?: number } | null)?.threshold ?? 50
 
   for (let i = 0; i < toScore.length; i += 10) {
     const batch = toScore.slice(i, i + 10)
@@ -88,8 +92,28 @@ export async function POST(req: NextRequest) {
           .update({ relevance_score: score, ai_summary: summary, ai_processed: true })
           .eq('id', article.id)
         processed++
+        if (score >= threshold) highScoreArticles.push({ title: article.title, url: article.url ?? '' })
       })
     )
+  }
+
+  // Send push notifications for high-score new articles
+  if (highScoreArticles.length > 0) {
+    const userId = feed.user_id as string
+    const { data: subs } = await supabase
+      .from('push_subscriptions')
+      .select('endpoint, p256dh, auth')
+      .eq('user_id', userId)
+
+    if (subs && subs.length > 0) {
+      const payload = highScoreArticles.length === 1
+        ? { title: 'feedwise', body: highScoreArticles[0].title, url: highScoreArticles[0].url }
+        : { title: 'feedwise', body: `${highScoreArticles.length} new relevant articles`, url: '/' }
+
+      await Promise.allSettled(
+        subs.map((sub) => sendPushNotification(sub as { endpoint: string; p256dh: string; auth: string }, payload))
+      )
+    }
   }
 
   await supabase
