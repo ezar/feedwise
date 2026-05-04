@@ -42,41 +42,49 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
   const hasMoreRef = useRef(initialArticles.length === PAGE_SIZE)
   const pageRef = useRef(1)
 
-  const readObserver = useRef<IntersectionObserver | null>(null)
-  const articleEls = useRef<Map<string, Element>>(new Map())
+  const articleEls = useRef<Map<string, HTMLDivElement>>(new Map())
 
-  // Mark-as-read: fires when element leaves viewport above the screen
+  // Mark-as-read via scroll: when an article's bottom edge passes above the
+  // viewport, call it read. Using getBoundingClientRect() in the scroll handler
+  // is synchronous and reliable — IntersectionObserver's async callbacks can
+  // miss fast scrolls or fire with stale boundingClientRect values.
   useEffect(() => {
-    readObserver.current = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) return
-        // Only mark read if scrolled ABOVE viewport (not below)
-        if (entry.boundingClientRect.top >= 0) return
-        const id = (entry.target as HTMLElement).dataset.id
-        if (!id) return
-        setArticles((prev) =>
-          prev.map((a) => (a.id === id && !a.is_read ? { ...a, is_read: true } : a))
-        )
-        fetch(`/api/articles/${id}`, {
-          method: 'PATCH',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ is_read: true }),
-        })
-      })
-    }, { threshold: 0 })
+    let rafId: number | null = null
 
-    articleEls.current.forEach((el) => readObserver.current!.observe(el))
-    return () => readObserver.current?.disconnect()
+    const check = () => {
+      rafId = null
+      articleEls.current.forEach((el, id) => {
+        if (el.getBoundingClientRect().bottom < 0) {
+          articleEls.current.delete(id)
+          setArticles((prev) =>
+            prev.map((a) => (a.id === id && !a.is_read ? { ...a, is_read: true } : a))
+          )
+          fetch(`/api/articles/${id}`, {
+            method: 'PATCH',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_read: true }),
+          })
+        }
+      })
+    }
+
+    const onScroll = () => {
+      if (rafId !== null) return
+      rafId = requestAnimationFrame(check)
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (rafId !== null) cancelAnimationFrame(rafId)
+    }
   }, [])
 
   const attachReadRef = useCallback((el: HTMLDivElement | null, id: string) => {
     if (el) {
       articleEls.current.set(id, el)
-      readObserver.current?.observe(el)
     } else {
-      const prev = articleEls.current.get(id)
-      if (prev) readObserver.current?.unobserve(prev)
       articleEls.current.delete(id)
     }
   }, [])
