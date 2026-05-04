@@ -40,7 +40,11 @@
     "pulling": "Pull to refresh",
     "refreshing": "Refreshing…",
     "viewCompact": "Compact view",
-    "viewCard": "Card view"
+    "viewCard": "Card view",
+    "dedupOn": "Deduplication on — click to disable",
+    "dedupOff": "Deduplication off — click to enable",
+    "dupeHidden": "{count} similar hidden",
+    "dupesCollapsed": "+ {count} similar articles"
   },
   "article": {
     "save": "Save article",

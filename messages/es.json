@@ -40,7 +40,11 @@
     "pulling": "Tira para actualizar",
     "refreshing": "Actualizando…",
     "viewCompact": "Vista compacta",
-    "viewCard": "Vista en tarjetas"
+    "viewCard": "Vista en tarjetas",
+    "dedupOn": "Deduplicación activada — pulsa para desactivar",
+    "dedupOff": "Deduplicación desactivada — pulsa para activar",
+    "dupeHidden": "{count} similares ocultos",
+    "dupesCollapsed": "+ {count} artículos similares"
   },
   "article": {
     "save": "Guardar artículo",

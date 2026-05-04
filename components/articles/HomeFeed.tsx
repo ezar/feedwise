@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Newspaper, CheckCheck, ArrowDown, LayoutList, LayoutGrid } from 'lucide-react'
+import { Loader2, Newspaper, CheckCheck, ArrowDown, LayoutList, LayoutGrid, Copy } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { ArticleCard } from './ArticleCard'
 import { ArticleRow } from './ArticleRow'
+import { groupDuplicates } from '@/lib/dedup'
 import { cn } from '@/lib/utils'
 
 type ViewMode = 'card' | 'compact'
@@ -47,6 +48,11 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
     if (typeof window === 'undefined') return 'card'
     return (localStorage.getItem('feedwise-view') as ViewMode) ?? 'card'
   })
+  const [dedupEnabled, setDedupEnabled] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return localStorage.getItem('feedwise-dedup') !== 'false'
+  })
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
 
   // Pull-to-refresh state
   const [pullDist, setPullDist] = useState(0)
@@ -210,6 +216,13 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
     ? articles.filter((a) => unreadSnapshot.has(a.id))
     : articles
 
+  const groups = useMemo(
+    () => dedupEnabled ? groupDuplicates(visible) : visible.map((a) => ({ main: a, dupes: [] })),
+    [visible, dedupEnabled]
+  )
+
+  const dedupedCount = visible.length - groups.filter((g) => g.dupes.length > 0).reduce((acc, g) => acc + g.dupes.length, 0)
+
   // Pull indicator: show above the feed when user is pulling down
   const showPullIndicator = pullDist > 8 || refreshing
   const pullReady = pullDist >= PULL_THRESHOLD * 0.9
@@ -246,7 +259,12 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground shrink-0">
           {unreadCount > 0 ? t('unread', { count: unreadCount }) : t('allRead')}
-          {' · '}{t('loaded', { count: articles.length })}
+          {' · '}{t('loaded', { count: dedupEnabled ? dedupedCount : visible.length })}
+          {dedupEnabled && visible.length > dedupedCount && (
+            <span className="ml-1 text-muted-foreground/60">
+              ({t('dupeHidden', { count: visible.length - dedupedCount })})
+            </span>
+          )}
         </p>
         <div className="flex items-center gap-2">
           {unreadCount > 0 && (
@@ -259,6 +277,17 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
               <span className="hidden sm:inline">{t('markAllRead')}</span>
             </button>
           )}
+          <button
+            onClick={() => {
+              const next = !dedupEnabled
+              setDedupEnabled(next)
+              localStorage.setItem('feedwise-dedup', String(next))
+            }}
+            className={cn('transition-colors', dedupEnabled ? 'text-primary' : 'text-muted-foreground hover:text-foreground')}
+            title={dedupEnabled ? t('dedupOn') : t('dedupOff')}
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </button>
           <button
             onClick={() => {
               const next: ViewMode = viewMode === 'card' ? 'compact' : 'card'
@@ -302,28 +331,46 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
       {/* Article list */}
       {viewMode === 'compact' && (
         <div className="border rounded-lg overflow-hidden divide-y">
-          {visible.map((article) => (
-            <div key={article.id} ref={(el) => attachReadRef(el, article.id)}>
-              <ArticleRow
-                article={article}
-                onSaveToggle={handleSaveToggle}
-                onMarkRead={handleMarkRead}
-              />
+          {groups.map(({ main, dupes }) => (
+            <div key={main.id}>
+              <div ref={(el) => attachReadRef(el, main.id)}>
+                <ArticleRow article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+              </div>
+              {dupes.length > 0 && !expandedGroups.has(main.id) && (
+                <button
+                  onClick={() => setExpandedGroups((prev) => new Set(Array.from(prev).concat(main.id)))}
+                  className="w-full text-left px-3 py-1 text-[11px] text-muted-foreground/70 hover:text-muted-foreground bg-muted/30 transition-colors"
+                >
+                  {t('dupesCollapsed', { count: dupes.length })}
+                </button>
+              )}
+              {dupes.length > 0 && expandedGroups.has(main.id) && dupes.map((dupe) => (
+                <div key={dupe.id} ref={(el) => attachReadRef(el, dupe.id)} className="opacity-60">
+                  <ArticleRow article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+                </div>
+              ))}
             </div>
           ))}
         </div>
       )}
-      {viewMode === 'card' && visible.map((article) => (
-        <div
-          key={article.id}
-          data-id={article.id}
-          ref={(el) => attachReadRef(el, article.id)}
-        >
-          <ArticleCard
-            article={article}
-            onSaveToggle={handleSaveToggle}
-            onMarkRead={handleMarkRead}
-          />
+      {viewMode === 'card' && groups.map(({ main, dupes }) => (
+        <div key={main.id}>
+          <div ref={(el) => attachReadRef(el, main.id)}>
+            <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+          </div>
+          {dupes.length > 0 && !expandedGroups.has(main.id) && (
+            <button
+              onClick={() => setExpandedGroups((prev) => new Set(Array.from(prev).concat(main.id)))}
+              className="ml-4 mb-2 text-[11px] text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+            >
+              {t('dupesCollapsed', { count: dupes.length })}
+            </button>
+          )}
+          {dupes.length > 0 && expandedGroups.has(main.id) && dupes.map((dupe) => (
+            <div key={dupe.id} ref={(el) => attachReadRef(el, dupe.id)} className="opacity-60 scale-[0.98] origin-left">
+              <ArticleCard article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+            </div>
+          ))}
         </div>
       ))}
 
