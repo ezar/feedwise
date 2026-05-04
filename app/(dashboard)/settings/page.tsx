@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { InterestsForm } from '@/components/settings/InterestsForm'
 import { OPMLImport } from '@/components/feeds/OPMLImport'
 import { SyncAllButton } from '@/components/settings/SyncAllButton'
+import { DiagnosticsPanel } from '@/components/settings/DiagnosticsPanel'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 export const dynamic = 'force-dynamic'
@@ -46,6 +47,16 @@ export default async function SettingsPage() {
             Proceso en segundo plano — puede tardar varios minutos con muchos feeds.
             También puedes actualizar feeds individuales desde su página de detalle.
           </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Diagnóstico</CardTitle>
+          <CardDescription>Estado del cron de QStash y del scoring de IA.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DiagnosticsPanel />
         </CardContent>
       </Card>
 
