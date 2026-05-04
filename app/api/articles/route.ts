@@ -9,7 +9,7 @@ export async function GET(req: Request) {
   const minScore = parseInt(searchParams.get('min_score') ?? '0')
   const savedOnly = searchParams.get('saved') === 'true'
   const page = parseInt(searchParams.get('page') ?? '1')
-  const pageSize = 20
+  const pageSize = 40
   const offset = (page - 1) * pageSize
 
   const { data: profile } = await supabase
