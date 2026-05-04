@@ -4,7 +4,8 @@
     "feeds": "Mis feeds",
     "saved": "Guardados",
     "settings": "Configuración",
-    "stats": "Stats"
+    "stats": "Stats",
+    "briefing": "Briefing"
   },
   "auth": {
     "signInTitle": "Inicia sesión en tu cuenta",
@@ -62,6 +63,17 @@
     "linkedin": "LinkedIn",
     "summarize": "Resumir con IA",
     "summarizing": "Resumiendo…"
+  },
+  "briefing": {
+    "title": "Briefing diario",
+    "cta": "Generar el briefing de hoy",
+    "ctaHint": "La IA lee tus 20 mejores artículos de las últimas 48h y escribe un resumen por temas.",
+    "generate": "Generar briefing",
+    "generating": "Generando tu briefing…",
+    "regenerate": "Regenerar",
+    "basedOn": "Basado en {count} artículos de tus feeds",
+    "noArticles": "No hay artículos recientes. Asegúrate de que tus feeds se están sincronizando.",
+    "error": "Error al generar el briefing. Inténtalo de nuevo."
   },
   "digest": {
     "button": "Digest IA",

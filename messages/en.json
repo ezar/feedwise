@@ -4,7 +4,8 @@
     "feeds": "My feeds",
     "saved": "Saved",
     "settings": "Settings",
-    "stats": "Stats"
+    "stats": "Stats",
+    "briefing": "Briefing"
   },
   "auth": {
     "signInTitle": "Sign in to your account",
@@ -62,6 +63,17 @@
     "linkedin": "LinkedIn",
     "summarize": "Summarize with AI",
     "summarizing": "Summarizing…"
+  },
+  "briefing": {
+    "title": "Daily Briefing",
+    "cta": "Generate today's briefing",
+    "ctaHint": "The AI reads your top 20 articles of the last 48h and writes a concise summary by topic.",
+    "generate": "Generate briefing",
+    "generating": "Generating your briefing…",
+    "regenerate": "Regenerate",
+    "basedOn": "Based on {count} articles from your feeds",
+    "noArticles": "No recent articles found. Make sure your feeds are syncing.",
+    "error": "Error generating the briefing. Try again."
   },
   "digest": {
     "button": "AI Digest",
