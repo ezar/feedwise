@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { RefreshCw, CheckCircle2, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/providers/ToastProvider'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
 interface Feed {
@@ -24,6 +25,7 @@ export function SyncAllButton() {
   const [sync, setSync] = useState<SyncState | null>(null)
   const [done, setDone] = useState<{ inserted: number; errors: number } | null>(null)
   const { toast } = useToast()
+  const t = useTranslations('sync')
 
   const handleSync = async () => {
     setDone(null)
@@ -33,7 +35,7 @@ export function SyncAllButton() {
     const feeds = data.feeds ?? []
 
     if (!feeds.length) {
-      toast({ title: 'No hay feeds para sincronizar' })
+      toast({ title: t('noFeeds') })
       return
     }
 
@@ -42,19 +44,10 @@ export function SyncAllButton() {
 
     for (let i = 0; i < feeds.length; i++) {
       const feed = feeds[i]
-      setSync({
-        current: i + 1,
-        total: feeds.length,
-        name: feed.title ?? feed.url,
-        inserted,
-        errors,
-      })
+      setSync({ current: i + 1, total: feeds.length, name: feed.title ?? feed.url, inserted, errors })
 
       try {
-        const r = await fetch(`/api/feeds/${feed.id}/fetch`, {
-          method: 'POST',
-          credentials: 'include',
-        })
+        const r = await fetch(`/api/feeds/${feed.id}/fetch`, { method: 'POST', credentials: 'include' })
         const d = await r.json() as { inserted?: number; error?: string }
         if (r.ok) {
           inserted += d.inserted ?? 0
@@ -69,8 +62,8 @@ export function SyncAllButton() {
     setSync(null)
     setDone({ inserted, errors })
     toast({
-      title: 'Sincronización completada',
-      description: `${inserted} artículos nuevos · ${errors > 0 ? `${errors} feeds con error` : 'sin errores'}`,
+      title: t('done'),
+      description: t('doneSummary', { count: inserted, errors }),
       variant: errors > 0 ? 'destructive' : undefined,
     })
   }
@@ -82,7 +75,7 @@ export function SyncAllButton() {
     <div className="flex flex-col gap-2">
       <Button onClick={handleSync} disabled={loading} variant="outline" className="w-full justify-start">
         <RefreshCw className={cn('h-4 w-4 shrink-0', loading && 'animate-spin')} />
-        {loading ? `Feed ${sync!.current}/${sync!.total}` : 'Sincronizar todos los feeds ahora'}
+        {loading ? t('currentFeed', { current: sync!.current, total: sync!.total }) : t('button')}
       </Button>
 
       {loading && (
@@ -93,17 +86,15 @@ export function SyncAllButton() {
               style={{ width: `${pct}%` }}
             />
           </div>
-          <p className="text-xs text-muted-foreground truncate">
-            {sync!.name}
-          </p>
+          <p className="text-xs text-muted-foreground truncate">{sync!.name}</p>
         </div>
       )}
 
       {done && !loading && (
         <p className="text-xs flex items-center gap-1.5">
           {done.errors === 0
-            ? <><CheckCircle2 className="h-3.5 w-3.5 text-green-500" /> {done.inserted} artículos nuevos</>
-            : <><XCircle className="h-3.5 w-3.5 text-destructive" /> {done.inserted} nuevos · {done.errors} feeds con error</>
+            ? <><CheckCircle2 className="h-3.5 w-3.5 text-green-500" /> {t('newArticles', { count: done.inserted })}</>
+            : <><XCircle className="h-3.5 w-3.5 text-destructive" /> {t('withErrors', { count: done.inserted, errors: done.errors })}</>
           }
         </p>
       )}

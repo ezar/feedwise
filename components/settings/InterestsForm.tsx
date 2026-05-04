@@ -6,26 +6,12 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/providers/ToastProvider'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
 interface InterestsFormProps {
   initialInterests: string
   initialThreshold: number
-}
-
-const THRESHOLD_LABELS: Record<number, string> = {
-  0: 'Todo',
-  25: 'Poco filtrado',
-  50: 'Equilibrado',
-  75: 'Estricto',
-  100: 'Máximo',
-}
-
-function getThresholdLabel(value: number): string {
-  const closest = Object.keys(THRESHOLD_LABELS)
-    .map(Number)
-    .reduce((prev, curr) => (Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev))
-  return THRESHOLD_LABELS[closest]
 }
 
 function getThresholdColor(value: number): string {
@@ -39,6 +25,18 @@ export function InterestsForm({ initialInterests, initialThreshold }: InterestsF
   const [threshold, setThreshold] = useState(initialThreshold)
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
+  const t = useTranslations('settings')
+
+  const thresholdLabels: Record<number, string> = {
+    0: t('t0'), 25: t('t25'), 50: t('t50'), 75: t('t75'), 100: t('t100'),
+  }
+
+  const getThresholdLabel = (value: number): string => {
+    const closest = Object.keys(thresholdLabels)
+      .map(Number)
+      .reduce((prev, curr) => (Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev))
+    return thresholdLabels[closest]
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,9 +48,9 @@ export function InterestsForm({ initialInterests, initialThreshold }: InterestsF
         body: JSON.stringify({ interests, threshold }),
       })
       if (!res.ok) throw new Error()
-      toast({ title: 'Configuración guardada' })
+      toast({ title: t('saveSuccess') })
     } catch {
-      toast({ title: 'Error al guardar', variant: 'destructive' })
+      toast({ title: t('saveError'), variant: 'destructive' })
     } finally {
       setLoading(false)
     }
@@ -61,23 +59,21 @@ export function InterestsForm({ initialInterests, initialThreshold }: InterestsF
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="interests">Mis intereses</Label>
+        <Label htmlFor="interests">{t('interestsLabel')}</Label>
         <Textarea
           id="interests"
           rows={4}
-          placeholder="Me interesa la IA, el desarrollo de software, diseño de producto, startups..."
+          placeholder={t('interestsPlaceholder')}
           value={interests}
           onChange={(e) => setInterests(e.target.value)}
           className="resize-none"
         />
-        <p className="text-xs text-muted-foreground">
-          Describe en lenguaje natural qué quieres leer. Claude usará esto para puntuar cada artículo del 0 al 100.
-        </p>
+        <p className="text-xs text-muted-foreground">{t('interestsHint')}</p>
       </div>
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <Label htmlFor="threshold">Umbral de relevancia</Label>
+          <Label htmlFor="threshold">{t('thresholdLabel')}</Label>
           <div className="flex items-center gap-2">
             <span className={cn('text-sm font-semibold tabular-nums', getThresholdColor(threshold))}>
               {threshold}
@@ -100,19 +96,19 @@ export function InterestsForm({ initialInterests, initialThreshold }: InterestsF
         />
 
         <div className="flex justify-between text-xs text-muted-foreground px-0.5">
-          <span>0 · Todo</span>
-          <span>50 · Equilibrado</span>
-          <span>100 · Solo lo mejor</span>
+          <span>{t('thresholdAll')}</span>
+          <span>{t('thresholdBalanced')}</span>
+          <span>{t('thresholdBest')}</span>
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Solo verás artículos con puntuación ≥ {threshold}. Más alto = menos artículos, más relevantes.
+          {t('thresholdHint', { threshold })}
         </p>
       </div>
 
       <Button type="submit" disabled={loading} className="self-start">
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-        Guardar configuración
+        {t('save')}
       </Button>
     </form>
   )

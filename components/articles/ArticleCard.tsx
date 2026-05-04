@@ -5,7 +5,9 @@ import { Bookmark, BookmarkCheck, ExternalLink, Sparkles } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { ShareButton } from './ShareButton'
 import { useToast } from '@/components/providers/ToastProvider'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
 interface Article {
@@ -43,6 +45,7 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
   const [saved, setSaved] = useState(article.is_saved)
   const [read, setRead] = useState(article.is_read)
   const { toast } = useToast()
+  const t = useTranslations('article')
 
   const handleSave = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -57,9 +60,9 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
     })
     if (!res.ok) {
       setSaved(!next)
-      toast({ title: 'Error al guardar', variant: 'destructive' })
+      toast({ title: t('saveError'), variant: 'destructive' })
     } else {
-      toast({ title: next ? 'Artículo guardado' : 'Eliminado de guardados' })
+      toast({ title: next ? t('saveSuccess') : t('unsaveSuccess') })
     }
   }
 
@@ -77,10 +80,9 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
   }
 
   const pubDate = article.published_at
-    ? new Date(article.published_at).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })
+    ? new Date(article.published_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
     : null
 
-  // Prefer AI summary; fall back to feed description (strip HTML tags)
   const snippet = article.ai_summary
     ?? (article.description ? article.description.replace(/<[^>]*>/g, '').trim() : null)
 
@@ -101,21 +103,24 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
             {article.title}
             <ExternalLink className="inline ml-1 h-3 w-3 opacity-0 group-hover:opacity-40 transition-opacity" />
           </a>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 shrink-0 mt-0.5"
-            onClick={handleSave}
-            title={saved ? 'Quitar de guardados' : 'Guardar artículo'}
-          >
-            {saved
-              ? <BookmarkCheck className="h-4 w-4 text-primary" />
-              : <Bookmark className="h-4 w-4 text-muted-foreground" />
-            }
-          </Button>
+          <div className="flex items-center shrink-0 mt-0.5">
+            <ShareButton title={article.title} url={article.url} summary={article.ai_summary} />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={handleSave}
+              title={saved ? t('unsave') : t('save')}
+            >
+              {saved
+                ? <BookmarkCheck className="h-4 w-4 text-primary" />
+                : <Bookmark className="h-4 w-4 text-muted-foreground" />
+              }
+            </Button>
+          </div>
         </div>
 
-        {/* Snippet: AI summary (italic) or feed description */}
+        {/* Snippet */}
         {snippet && (
           <p className={cn(
             'text-xs text-muted-foreground leading-relaxed line-clamp-2',
@@ -141,7 +146,7 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
           </div>
         )}
 
-        {/* Meta: feed name + date */}
+        {/* Meta */}
         <div className="flex items-center gap-2 flex-wrap">
           {article.feeds?.title && (
             <Badge variant="secondary" className="text-xs font-normal">

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/providers/ToastProvider'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
 interface Feed {
@@ -26,6 +27,7 @@ interface FeedListProps {
 export function FeedList({ feeds, onDeleted }: FeedListProps) {
   const [deleting, setDeleting] = useState<string | null>(null)
   const { toast } = useToast()
+  const t = useTranslations('feeds')
 
   const handleDelete = async (feed: Feed) => {
     setDeleting(feed.id)
@@ -33,9 +35,9 @@ export function FeedList({ feeds, onDeleted }: FeedListProps) {
       const res = await fetch(`/api/feeds/${feed.id}`, { method: 'DELETE', credentials: 'include' })
       if (!res.ok) throw new Error()
       onDeleted(feed.id)
-      toast({ title: 'Feed eliminado', description: feed.title ?? feed.url })
+      toast({ title: t('deleted'), description: feed.title ?? feed.url })
     } catch {
-      toast({ title: 'Error al eliminar el feed', variant: 'destructive' })
+      toast({ title: t('deleteError'), variant: 'destructive' })
     } finally {
       setDeleting(null)
     }
@@ -45,7 +47,7 @@ export function FeedList({ feeds, onDeleted }: FeedListProps) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center gap-3 border rounded-lg border-dashed">
         <Rss className="h-8 w-8 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">No tienes feeds todavía</p>
+        <p className="text-sm text-muted-foreground">{t('empty')}</p>
       </div>
     )
   }
@@ -79,7 +81,7 @@ export function FeedList({ feeds, onDeleted }: FeedListProps) {
               ) : (
                 <>
                   <Badge variant={feed.feed_type === 'topic' ? 'default' : 'outline'} className="text-xs">
-                    {feed.feed_type === 'topic' ? 'Tema IA' : 'Manual'}
+                    {feed.feed_type === 'topic' ? t('topicBadge') : t('manualBadge')}
                   </Badge>
                   {feed.topic_query && (
                     <span className="text-xs text-muted-foreground truncate max-w-[200px]">
@@ -89,7 +91,7 @@ export function FeedList({ feeds, onDeleted }: FeedListProps) {
                   {feed.last_fetched_at && (
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {new Date(feed.last_fetched_at).toLocaleString('es-ES', {
+                      {new Date(feed.last_fetched_at).toLocaleString(undefined, {
                         month: 'short', day: 'numeric',
                         hour: '2-digit', minute: '2-digit',
                       })}
@@ -106,7 +108,7 @@ export function FeedList({ feeds, onDeleted }: FeedListProps) {
             className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
             onClick={() => handleDelete(feed)}
             disabled={deleting === feed.id}
-            title="Eliminar feed"
+            title={t('deleteTitle')}
           >
             <Trash2 className="h-4 w-4" />
           </Button>

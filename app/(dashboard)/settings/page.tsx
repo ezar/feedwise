@@ -3,13 +3,16 @@ import { InterestsForm } from '@/components/settings/InterestsForm'
 import { OPMLImport } from '@/components/feeds/OPMLImport'
 import { SyncAllButton } from '@/components/settings/SyncAllButton'
 import { DiagnosticsPanel } from '@/components/settings/DiagnosticsPanel'
+import { LocaleSwitcher } from '@/components/settings/LocaleSwitcher'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { getTranslations } from 'next-intl/server'
 
 export const dynamic = 'force-dynamic'
 
 export default async function SettingsPage() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const t = await getTranslations('settings')
 
   const { data: profile } = await supabase
     .from('user_profile')
@@ -19,12 +22,12 @@ export default async function SettingsPage() {
 
   return (
     <div className="max-w-xl mx-auto flex flex-col gap-6">
-      <h2 className="text-xl font-semibold">Configuración</h2>
+      <h2 className="text-xl font-semibold">{t('title')}</h2>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Intereses y umbral de relevancia</CardTitle>
-          <CardDescription>Claude usa esto para puntuar cada artículo del 0 al 100.</CardDescription>
+          <CardTitle className="text-base">{t('interestsTitle')}</CardTitle>
+          <CardDescription>{t('interestsDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           <InterestsForm
@@ -36,24 +39,19 @@ export default async function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Sincronización</CardTitle>
-          <CardDescription>
-            Los feeds se actualizan automáticamente cada hora vía QStash. Puedes forzarlo manualmente.
-          </CardDescription>
+          <CardTitle className="text-base">{t('syncTitle')}</CardTitle>
+          <CardDescription>{t('syncDescription')}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <SyncAllButton />
-          <p className="text-xs text-muted-foreground">
-            Proceso en segundo plano — puede tardar varios minutos con muchos feeds.
-            También puedes actualizar feeds individuales desde su página de detalle.
-          </p>
+          <p className="text-xs text-muted-foreground">{t('syncHint')}</p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Diagnóstico</CardTitle>
-          <CardDescription>Estado del cron de QStash y del scoring de IA.</CardDescription>
+          <CardTitle className="text-base">{t('diagnosticsTitle')}</CardTitle>
+          <CardDescription>{t('diagnosticsDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           <DiagnosticsPanel />
@@ -62,11 +60,21 @@ export default async function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Importar feeds</CardTitle>
-          <CardDescription>Importa tus suscripciones desde Feedly u otro lector vía OPML.</CardDescription>
+          <CardTitle className="text-base">{t('importTitle')}</CardTitle>
+          <CardDescription>{t('importDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           <OPMLImport />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{t('languageTitle')}</CardTitle>
+          <CardDescription>{t('languageDescription')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <LocaleSwitcher />
         </CardContent>
       </Card>
 

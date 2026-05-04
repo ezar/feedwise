@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { Upload, FileText, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/providers/ToastProvider'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
 interface OPMLImportProps {
@@ -18,12 +19,13 @@ export function OPMLImport({ onImported }: OPMLImportProps) {
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
+  const t = useTranslations('opml')
 
   const handleFile = async (file: File) => {
     const validExt = ['.opml', '.xml'].some((ext) => file.name.toLowerCase().endsWith(ext))
     const validMime = ['text/x-opml', 'text/xml', 'application/xml', 'application/octet-stream', ''].includes(file.type)
     if (!validExt && !validMime) {
-      toast({ title: 'Formato incorrecto', description: 'El archivo debe ser .opml o .xml', variant: 'destructive' })
+      toast({ title: t('wrongFormat'), description: t('wrongFormatHint'), variant: 'destructive' })
       return
     }
 
@@ -41,12 +43,12 @@ export function OPMLImport({ onImported }: OPMLImportProps) {
       const skipped = data.skipped ?? 0
       setResult({ inserted, skipped })
       setStatus('success')
-      toast({ title: `${inserted} feed${inserted !== 1 ? 's' : ''} importados` })
+      toast({ title: t('importSuccess', { count: inserted }) })
       onImported?.()
     } catch (err) {
       setStatus('error')
       toast({
-        title: 'Error al importar',
+        title: t('importError'),
         description: err instanceof Error ? err.message : undefined,
         variant: 'destructive',
       })
@@ -99,16 +101,14 @@ export function OPMLImport({ onImported }: OPMLImportProps) {
 
         <div>
           <p className="text-sm font-medium">
-            {status === 'loading' && 'Importando feeds…'}
-            {status === 'success' && '¡Importación completada!'}
-            {status === 'error' && 'Error en la importación'}
-            {status === 'idle' && 'Arrastra tu archivo OPML aquí'}
+            {status === 'loading' && t('importing')}
+            {status === 'success' && t('success')}
+            {status === 'error' && t('errorStatus')}
+            {status === 'idle' && t('dropHint')}
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {status === 'idle' && 'o haz clic para seleccionarlo · .opml o .xml'}
-            {status === 'success' && result && (
-              `${result.inserted} añadidos · ${result.skipped} duplicados omitidos`
-            )}
+            {status === 'idle' && t('dropHint2')}
+            {status === 'success' && result && t('result', { inserted: result.inserted, skipped: result.skipped })}
           </p>
         </div>
 
@@ -118,7 +118,7 @@ export function OPMLImport({ onImported }: OPMLImportProps) {
             size="sm"
             onClick={(e) => { e.stopPropagation(); setStatus('idle') }}
           >
-            Importar otro archivo
+            {t('importAnother')}
           </Button>
         )}
       </div>
@@ -126,13 +126,13 @@ export function OPMLImport({ onImported }: OPMLImportProps) {
       <div className="rounded-lg bg-muted/40 border p-4 flex flex-col gap-2">
         <p className="text-xs font-medium flex items-center gap-2">
           <FileText className="h-3.5 w-3.5" />
-          Cómo exportar desde Feedly
+          {t('howToTitle')}
         </p>
         <ol className="text-xs text-muted-foreground flex flex-col gap-1 list-decimal list-inside">
-          <li>Abre Feedly y ve a <strong>Preferences</strong></li>
-          <li>Busca la sección <strong>Import / Export</strong></li>
-          <li>Haz clic en <strong>Export as OPML</strong></li>
-          <li>Sube el archivo descargado aquí</li>
+          <li dangerouslySetInnerHTML={{ __html: t.raw('step1') }} />
+          <li dangerouslySetInnerHTML={{ __html: t.raw('step2') }} />
+          <li dangerouslySetInnerHTML={{ __html: t.raw('step3') }} />
+          <li>{t('step4')}</li>
         </ol>
       </div>
     </div>

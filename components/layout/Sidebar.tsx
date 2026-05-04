@@ -3,17 +3,19 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Rss, Bookmark, Settings, LayoutDashboard } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
-const navItems = [
-  { href: '/', label: 'Feed', icon: LayoutDashboard },
-  { href: '/feeds', label: 'Mis feeds', icon: Rss },
-  { href: '/saved', label: 'Guardados', icon: Bookmark },
-  { href: '/settings', label: 'Configuración', icon: Settings },
-]
-
 export function Sidebar() {
+  const t = useTranslations('nav')
   const pathname = usePathname()
+
+  const navItems = [
+    { href: '/', label: t('feed'), icon: LayoutDashboard },
+    { href: '/feeds', label: t('feeds'), icon: Rss },
+    { href: '/saved', label: t('saved'), icon: Bookmark },
+    { href: '/settings', label: t('settings'), icon: Settings },
+  ]
 
   return (
     <aside className="hidden md:flex flex-col w-56 border-r bg-card h-screen sticky top-0 p-4 gap-1">

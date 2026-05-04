@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Sparkles, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
 interface DigestButtonProps {
@@ -15,6 +16,7 @@ export function DigestButton({ feedId }: DigestButtonProps) {
   const [count, setCount] = useState(0)
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const t = useTranslations('digest')
 
   const generate = async () => {
     setLoading(true)
@@ -26,7 +28,7 @@ export function DigestButton({ feedId }: DigestButtonProps) {
       })
       const data = await res.json() as { digest?: string | null; count?: number; error?: string }
       if (!res.ok) {
-        setError(data.error ?? 'Error al generar el digest')
+        setError(data.error ?? t('error'))
         return
       }
       if (!data.digest) {
@@ -39,7 +41,7 @@ export function DigestButton({ feedId }: DigestButtonProps) {
       setCount(data.count ?? 0)
       setOpen(true)
     } catch {
-      setError('Error de red')
+      setError(t('networkError'))
     } finally {
       setLoading(false)
     }
@@ -56,7 +58,7 @@ export function DigestButton({ feedId }: DigestButtonProps) {
             className="gap-1.5"
           >
             <Sparkles className="h-3.5 w-3.5 text-primary" />
-            Digest IA
+            {t('button')}
             {open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
           </Button>
         ) : (
@@ -70,7 +72,7 @@ export function DigestButton({ feedId }: DigestButtonProps) {
             {loading
               ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
               : <Sparkles className="h-3.5 w-3.5" />}
-            {loading ? 'Generando…' : 'Digest IA'}
+            {loading ? t('generating') : t('button')}
           </Button>
         )}
         {error && <p className="text-xs text-destructive">{error}</p>}
@@ -82,7 +84,7 @@ export function DigestButton({ feedId }: DigestButtonProps) {
             <>
               <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
                 <Sparkles className="h-3 w-3 text-primary" />
-                Resumen de {count} artículo{count !== 1 ? 's' : ''} no leídos
+                {t('summary', { count })}
               </p>
               <div
                 className={cn('prose prose-sm dark:prose-invert max-w-none text-sm')}
@@ -92,11 +94,11 @@ export function DigestButton({ feedId }: DigestButtonProps) {
                 onClick={() => { setDigest(null); setOpen(false) }}
                 className="mt-3 text-xs text-muted-foreground hover:text-foreground underline"
               >
-                Regenerar
+                {t('regenerate')}
               </button>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">No hay artículos no leídos en este feed.</p>
+            <p className="text-sm text-muted-foreground">{t('noUnread')}</p>
           )}
         </div>
       )}
@@ -116,7 +118,6 @@ function markdownToHtml(md: string): string {
     .replace(/^- (.+)$/gm, '<li>$1</li>')
     .replace(/(<li>[\s\S]*?<\/li>\n?)+/g, (m) => `<ol>${m}</ol>`)
     .replace(/\n\n/g, '</p><p>')
-    .replace(/^(?!<[hol])(.+)$/gm, (m) => m.startsWith('<') ? m : m)
     .replace(/^(.+)$(?!\n)/gm, (m) => (m.startsWith('<') ? m : `<p>${m}</p>`))
     .replace(/<p><\/p>/g, '')
 }

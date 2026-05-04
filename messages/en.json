@@ -1,8 +1,4 @@
 {
-  "app": {
-    "name": "feedwise",
-    "tagline": "AI-filtered news"
-  },
   "nav": {
     "feed": "Feed",
     "feeds": "My feeds",
@@ -10,44 +6,180 @@
     "settings": "Settings"
   },
   "auth": {
-    "login": "Sign in",
-    "register": "Sign up",
-    "logout": "Sign out",
-    "email": "Email",
-    "password": "Password",
+    "signInTitle": "Sign in to your account",
+    "signUpTitle": "Create your account",
     "noAccount": "Don't have an account?",
-    "hasAccount": "Already have an account?"
+    "register": "Sign up",
+    "hasAccount": "Already have an account?",
+    "login": "Sign in"
+  },
+  "home": {
+    "title": "Your feed",
+    "threshold": "Threshold {value}+",
+    "articles": "{count, plural, one {# article} other {# articles}}",
+    "interestsBanner": "Set up your interests to activate AI",
+    "interestsBannerHint": "Without interests, articles are not scored or filtered. Tap here to go to Settings."
   },
   "feed": {
-    "title": "Your feed",
-    "empty": "No articles yet",
-    "emptyHint": "Add feeds and configure your interests to see relevant articles.",
-    "threshold": "Threshold"
+    "noRelevant": "Nothing relevant yet",
+    "noArticles": "No articles yet",
+    "noRelevantHint": "No articles with score ≥ {threshold} yet. Try lowering the threshold in Settings.",
+    "noArticlesHint": "Add feeds and refresh them to start seeing articles.",
+    "unread": "{count} unread",
+    "allRead": "All read",
+    "loaded": "{count} loaded",
+    "all": "All",
+    "unreadFilter": "Unread",
+    "unreadFilterCount": "Unread ({count})",
+    "allReadEmptyTitle": "All read",
+    "allReadEmptyHint": "Switch to «All» to see your history.",
+    "reachedEnd": "You've reached the end · {count} articles"
+  },
+  "article": {
+    "save": "Save article",
+    "unsave": "Remove from saved",
+    "saveError": "Error saving",
+    "saveSuccess": "Article saved",
+    "unsaveSuccess": "Removed from saved"
+  },
+  "share": {
+    "button": "Share",
+    "copy": "Copy link",
+    "copyText": "Copy summary",
+    "copied": "Copied!",
+    "whatsapp": "WhatsApp",
+    "linkedin": "LinkedIn"
+  },
+  "digest": {
+    "button": "AI Digest",
+    "generating": "Generating…",
+    "error": "Error generating digest",
+    "networkError": "Network error",
+    "summary": "{count, plural, one {Summary of # unread article} other {Summary of # unread articles}}",
+    "regenerate": "Regenerate",
+    "noUnread": "No unread articles in this feed."
   },
   "feeds": {
     "title": "Feed management",
-    "addTopic": "Add by topic",
-    "addManual": "Add manually",
-    "active": "Active feeds",
-    "describe": "Describe what you want to read",
-    "generate": "Generate feeds",
-    "confirm": "Confirm and save",
-    "addRss": "Add RSS feed",
-    "url": "RSS feed URL",
-    "name": "Name (optional)",
-    "add": "Add feed"
+    "empty": "No feeds yet",
+    "deleted": "Feed deleted",
+    "deleteError": "Error deleting feed",
+    "topicBadge": "AI Topic",
+    "manualBadge": "Manual",
+    "deleteTitle": "Delete feed",
+    "urlLabel": "RSS feed URL",
+    "urlPlaceholder": "https://example.com/feed.xml",
+    "nameLabel": "Name (optional)",
+    "namePlaceholder": "My favourite blog",
+    "addButton": "Add feed",
+    "addError": "Error adding feed",
+    "addSuccess": "Feed added successfully"
   },
-  "saved": {
-    "title": "Saved articles"
+  "topic": {
+    "placeholder": "E.g. I want news about AI applied to productivity, no fundraising or investment…",
+    "generating": "Analysing with Claude…",
+    "generate": "Generate with AI",
+    "suggests": "{count, plural, one {Claude suggests # feed} other {Claude suggests # feeds}} — select the ones you want:",
+    "create": "{count, plural, one {Create # feed} other {Create # feeds}}",
+    "createError": "Error creating feeds",
+    "createSuccess": "Feeds created successfully",
+    "notFound": "Claude couldn't find queries for that text"
+  },
+  "fetchButton": {
+    "updated": "Feed updated",
+    "articlesFound": "{total} articles found · {inserted} new",
+    "error": "Error updating",
+    "loading": "Updating…",
+    "button": "Update now"
+  },
+  "opml": {
+    "wrongFormat": "Wrong format",
+    "wrongFormatHint": "File must be .opml or .xml",
+    "importing": "Importing feeds…",
+    "success": "Import complete!",
+    "errorStatus": "Import error",
+    "dropHint": "Drag your OPML file here",
+    "dropHint2": "or click to select · .opml or .xml",
+    "result": "{inserted} added · {skipped} duplicates skipped",
+    "importAnother": "Import another file",
+    "importError": "Import error",
+    "importSuccess": "{count, plural, one {# feed imported} other {# feeds imported}}",
+    "howToTitle": "How to export from Feedly",
+    "step1": "Open Feedly and go to <b>Preferences</b>",
+    "step2": "Find the <b>Import / Export</b> section",
+    "step3": "Click <b>Export as OPML</b>",
+    "step4": "Upload the downloaded file here"
   },
   "settings": {
     "title": "Settings",
-    "interests": "Interests and relevance threshold",
+    "interestsTitle": "Interests & relevance threshold",
+    "interestsDescription": "Claude uses this to score each article from 0 to 100.",
     "interestsLabel": "My interests",
-    "interestsHint": "Describe in natural language what you want to read.",
-    "threshold": "Relevance threshold",
-    "thresholdHint": "You'll only see articles with a score equal to or above the threshold.",
-    "save": "Save",
-    "saved": "Saved!"
+    "interestsPlaceholder": "I'm interested in AI, software development, product design, startups…",
+    "interestsHint": "Describe in natural language what you want to read. Claude will use this to score articles from 0 to 100.",
+    "thresholdLabel": "Relevance threshold",
+    "thresholdAll": "0 · All",
+    "thresholdBalanced": "50 · Balanced",
+    "thresholdBest": "100 · Best only",
+    "thresholdHint": "You'll only see articles with score ≥ {threshold}. Higher = fewer, more relevant articles.",
+    "t0": "All",
+    "t25": "Low filter",
+    "t50": "Balanced",
+    "t75": "Strict",
+    "t100": "Maximum",
+    "save": "Save settings",
+    "saveSuccess": "Settings saved",
+    "saveError": "Error saving",
+    "syncTitle": "Synchronisation",
+    "syncDescription": "Feeds update automatically every hour via QStash. You can force a sync manually.",
+    "syncHint": "Background process — may take a few minutes with many feeds. You can also update individual feeds from their detail page.",
+    "diagnosticsTitle": "Diagnostics",
+    "diagnosticsDescription": "QStash cron status and AI scoring health.",
+    "importTitle": "Import feeds",
+    "importDescription": "Import your subscriptions from Feedly or another reader via OPML.",
+    "languageTitle": "Language",
+    "languageDescription": "Change the interface language."
+  },
+  "diagnostics": {
+    "loading": "Loading diagnostics…",
+    "loadFailed": "Could not load diagnostics.",
+    "lastCron": "Last QStash trigger",
+    "never": "Never",
+    "cronNeverHint": "Feeds have not been synced via cron yet",
+    "scoredArticles": "Scored articles",
+    "noInterestsHint": "Set up your interests to enable scoring",
+    "pendingHint": "{count} pending — will be scored on next cron",
+    "allScored": "All scored",
+    "refresh": "Refresh",
+    "aiTestTitle": "Live AI test",
+    "testButton": "Test now",
+    "testing": "Testing…",
+    "needsInterests": "Fill in your interests to run the test.",
+    "aiOk": "AI working · {ms}ms",
+    "score": "Score: {score}/100",
+    "aiError": "AI error",
+    "lessThan1min": "less than 1 min ago",
+    "minutes": "{m} min ago",
+    "hours": "{h}h ago",
+    "days": "{d}d ago"
+  },
+  "sync": {
+    "noFeeds": "No feeds to sync",
+    "button": "Sync all feeds now",
+    "currentFeed": "Feed {current}/{total}",
+    "newArticles": "{count} new articles",
+    "withErrors": "{count} new · {errors} feeds with errors",
+    "done": "Sync complete",
+    "doneSummary": "{count} new articles · {errors, plural, =0 {no errors} other {# feeds with errors}}"
+  },
+  "saved": {
+    "title": "Saved articles",
+    "empty": "No saved articles",
+    "emptyHint": "Tap the bookmark icon on any article to save it here."
+  },
+  "language": {
+    "es": "Español",
+    "en": "English",
+    "label": "Idioma / Language"
   }
 }

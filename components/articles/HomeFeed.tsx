@@ -29,7 +29,6 @@ const PAGE_SIZE = 40
 
 export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: HomeFeedProps) {
   const [articles, setArticles] = useState<Article[]>(initialArticles)
-  const [page, setPage] = useState(1)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(initialArticles.length === PAGE_SIZE)
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
@@ -38,47 +37,39 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
   const [unreadSnapshot, setUnreadSnapshot] = useState<Set<string>>(new Set())
 
   const sentinelRef = useRef<HTMLDivElement>(null)
+  // All pagination/loading state kept in refs for synchronous guard checks
   const loadingMoreRef = useRef(false)
-  const hasMoreRef = useRef(hasMore)
-  const pageRef = useRef(page)
+  const hasMoreRef = useRef(initialArticles.length === PAGE_SIZE)
+  const pageRef = useRef(1)
+
   const readObserver = useRef<IntersectionObserver | null>(null)
-  const seenIds = useRef<Set<string>>(new Set())
   const articleEls = useRef<Map<string, Element>>(new Map())
 
-  // Keep refs in sync
-  useEffect(() => { loadingMoreRef.current = loadingMore }, [loadingMore])
-  useEffect(() => { hasMoreRef.current = hasMore }, [hasMore])
-  useEffect(() => { pageRef.current = page }, [page])
-
-  // Mark-as-read observer
+  // Mark-as-read: fires when element leaves viewport above the screen
   useEffect(() => {
     readObserver.current = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
+        if (entry.isIntersecting) return
+        // Only mark read if scrolled ABOVE viewport (not below)
+        if (entry.boundingClientRect.top >= 0) return
         const id = (entry.target as HTMLElement).dataset.id
         if (!id) return
-        if (entry.isIntersecting) {
-          seenIds.current.add(id)
-        } else if (seenIds.current.has(id)) {
-          // Scrolled past — mark read
-          setArticles((prev) =>
-            prev.map((a) => (a.id === id && !a.is_read ? { ...a, is_read: true } : a))
-          )
-          fetch(`/api/articles/${id}`, {
-            method: 'PATCH',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ is_read: true }),
-          })
-        }
+        setArticles((prev) =>
+          prev.map((a) => (a.id === id && !a.is_read ? { ...a, is_read: true } : a))
+        )
+        fetch(`/api/articles/${id}`, {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_read: true }),
+        })
       })
-    }, { threshold: 0.1 })
+    }, { threshold: 0 })
 
-    // Observe any already-mounted elements
     articleEls.current.forEach((el) => readObserver.current!.observe(el))
     return () => readObserver.current?.disconnect()
   }, [])
 
-  // Callback ref to attach/detach read observer per card
   const attachReadRef = useCallback((el: HTMLDivElement | null, id: string) => {
     if (el) {
       articleEls.current.set(id, el)
@@ -90,30 +81,42 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
     }
   }, [])
 
-  // Infinite scroll sentinel
+  // Infinite scroll
   const loadMore = useCallback(async () => {
     if (loadingMoreRef.current || !hasMoreRef.current) return
+    loadingMoreRef.current = true
     setLoadingMore(true)
     try {
       const nextPage = pageRef.current + 1
       const feedParam = feedId ? `&feed_id=${feedId}` : ''
       const res = await fetch(`/api/articles?page=${nextPage}${feedParam}`, { credentials: 'include' })
+      if (!res.ok) {
+        hasMoreRef.current = false
+        setHasMore(false)
+        return
+      }
       const data = await res.json() as { articles?: Article[] }
       const next = data.articles ?? []
       setArticles((prev) => [...prev, ...next])
-      setPage(nextPage)
-      setHasMore(next.length === PAGE_SIZE)
+      pageRef.current = nextPage
+      const more = next.length === PAGE_SIZE
+      hasMoreRef.current = more
+      setHasMore(more)
+    } catch {
+      hasMoreRef.current = false
+      setHasMore(false)
     } finally {
+      loadingMoreRef.current = false
       setLoadingMore(false)
     }
-  }, [])
+  }, [feedId])
 
   useEffect(() => {
     const sentinel = sentinelRef.current
     if (!sentinel) return
     const observer = new IntersectionObserver(
       (entries) => { if (entries[0].isIntersecting) void loadMore() },
-      { rootMargin: '300px' }
+      { rootMargin: '200px' }
     )
     observer.observe(sentinel)
     return () => observer.disconnect()
@@ -206,8 +209,8 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
         </div>
       )}
 
-      {/* Infinite scroll sentinel */}
-      <div ref={sentinelRef} className="h-4" />
+      {/* Sentinel must be before the spinner so it stays visible while loading */}
+      <div ref={sentinelRef} className="h-1" />
 
       {loadingMore && (
         <div className="flex justify-center py-4">

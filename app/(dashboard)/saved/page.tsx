@@ -1,10 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { ArticleList } from '@/components/articles/ArticleList'
+import { getTranslations } from 'next-intl/server'
 
 export const dynamic = 'force-dynamic'
 
 export default async function SavedPage() {
   const supabase = createClient()
+  const t = await getTranslations('saved')
 
   const { data: articles } = await supabase
     .from('articles')
@@ -15,11 +17,11 @@ export default async function SavedPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h2 className="text-xl font-semibold mb-6">Artículos guardados</h2>
+      <h2 className="text-xl font-semibold mb-6">{t('title')}</h2>
       <ArticleList
         initialArticles={articles ?? []}
-        emptyMessage="No tienes artículos guardados"
-        emptyHint="Toca el icono de marcador en cualquier artículo para guardarlo aquí."
+        emptyMessage={t('empty')}
+        emptyHint={t('emptyHint')}
       />
     </div>
   )

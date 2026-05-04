@@ -1,8 +1,4 @@
 {
-  "app": {
-    "name": "feedwise",
-    "tagline": "Noticias filtradas por IA"
-  },
   "nav": {
     "feed": "Feed",
     "feeds": "Mis feeds",
@@ -10,44 +6,180 @@
     "settings": "Configuración"
   },
   "auth": {
-    "login": "Iniciar sesión",
-    "register": "Registrarse",
-    "logout": "Cerrar sesión",
-    "email": "Email",
-    "password": "Contraseña",
+    "signInTitle": "Inicia sesión en tu cuenta",
+    "signUpTitle": "Crea tu cuenta",
     "noAccount": "¿No tienes cuenta?",
-    "hasAccount": "¿Ya tienes cuenta?"
+    "register": "Regístrate",
+    "hasAccount": "¿Ya tienes cuenta?",
+    "login": "Inicia sesión"
+  },
+  "home": {
+    "title": "Tu feed",
+    "threshold": "Umbral {value}+",
+    "articles": "{count, plural, one {# artículo} other {# artículos}}",
+    "interestsBanner": "Configura tus intereses para activar la IA",
+    "interestsBannerHint": "Sin intereses, los artículos no se puntúan y no se filtran. Toca aquí para ir a Ajustes."
   },
   "feed": {
-    "title": "Tu feed",
-    "empty": "No hay artículos todavía",
-    "emptyHint": "Añade feeds y configura tus intereses para ver artículos relevantes.",
-    "threshold": "Umbral"
+    "noRelevant": "Nada relevante por ahora",
+    "noArticles": "Sin artículos todavía",
+    "noRelevantHint": "Aún no hay artículos con puntuación ≥ {threshold}. Prueba a bajar el umbral en Ajustes.",
+    "noArticlesHint": "Añade feeds y actualízalos para empezar a ver artículos.",
+    "unread": "{count} sin leer",
+    "allRead": "Todo leído",
+    "loaded": "{count} cargados",
+    "all": "Todos",
+    "unreadFilter": "No leídos",
+    "unreadFilterCount": "No leídos ({count})",
+    "allReadEmptyTitle": "Todo leído",
+    "allReadEmptyHint": "Cambia a «Todos» para ver el historial.",
+    "reachedEnd": "Has llegado al final · {count} artículos"
+  },
+  "article": {
+    "save": "Guardar artículo",
+    "unsave": "Quitar de guardados",
+    "saveError": "Error al guardar",
+    "saveSuccess": "Artículo guardado",
+    "unsaveSuccess": "Eliminado de guardados"
+  },
+  "share": {
+    "button": "Compartir",
+    "copy": "Copiar enlace",
+    "copyText": "Copiar resumen",
+    "copied": "¡Copiado!",
+    "whatsapp": "WhatsApp",
+    "linkedin": "LinkedIn"
+  },
+  "digest": {
+    "button": "Digest IA",
+    "generating": "Generando…",
+    "error": "Error al generar el digest",
+    "networkError": "Error de red",
+    "summary": "{count, plural, one {Resumen de # artículo no leído} other {Resumen de # artículos no leídos}}",
+    "regenerate": "Regenerar",
+    "noUnread": "No hay artículos no leídos en este feed."
   },
   "feeds": {
     "title": "Gestión de feeds",
-    "addTopic": "Añadir por tema",
-    "addManual": "Añadir manual",
-    "active": "Feeds activos",
-    "describe": "Describe qué quieres leer",
-    "generate": "Generar feeds",
-    "confirm": "Confirmar y guardar",
-    "addRss": "Añadir feed RSS",
-    "url": "URL del feed RSS",
-    "name": "Nombre (opcional)",
-    "add": "Añadir feed"
+    "empty": "No tienes feeds todavía",
+    "deleted": "Feed eliminado",
+    "deleteError": "Error al eliminar el feed",
+    "topicBadge": "Tema IA",
+    "manualBadge": "Manual",
+    "deleteTitle": "Eliminar feed",
+    "urlLabel": "URL del feed RSS",
+    "urlPlaceholder": "https://example.com/feed.xml",
+    "nameLabel": "Nombre (opcional)",
+    "namePlaceholder": "Mi blog favorito",
+    "addButton": "Añadir feed",
+    "addError": "Error al añadir feed",
+    "addSuccess": "Feed añadido correctamente"
   },
-  "saved": {
-    "title": "Artículos guardados"
+  "topic": {
+    "placeholder": "Ej: quiero noticias de IA aplicada a productividad, sin fundraising ni inversión...",
+    "generating": "Analizando con Claude…",
+    "generate": "Generar con IA",
+    "suggests": "{count, plural, one {Claude sugiere # feed} other {Claude sugiere # feeds}} — selecciona los que quieras:",
+    "create": "{count, plural, one {Crear # feed} other {Crear # feeds}}",
+    "createError": "Error creando los feeds",
+    "createSuccess": "Feeds creados correctamente",
+    "notFound": "Claude no encontró queries para ese texto"
+  },
+  "fetchButton": {
+    "updated": "Feed actualizado",
+    "articlesFound": "{total} artículos encontrados · {inserted} nuevos",
+    "error": "Error al actualizar",
+    "loading": "Actualizando…",
+    "button": "Actualizar ahora"
+  },
+  "opml": {
+    "wrongFormat": "Formato incorrecto",
+    "wrongFormatHint": "El archivo debe ser .opml o .xml",
+    "importing": "Importando feeds…",
+    "success": "¡Importación completada!",
+    "errorStatus": "Error en la importación",
+    "dropHint": "Arrastra tu archivo OPML aquí",
+    "dropHint2": "o haz clic para seleccionarlo · .opml o .xml",
+    "result": "{inserted} añadidos · {skipped} duplicados omitidos",
+    "importAnother": "Importar otro archivo",
+    "importError": "Error al importar",
+    "importSuccess": "{count, plural, one {# feed importado} other {# feeds importados}}",
+    "howToTitle": "Cómo exportar desde Feedly",
+    "step1": "Abre Feedly y ve a <b>Preferences</b>",
+    "step2": "Busca la sección <b>Import / Export</b>",
+    "step3": "Haz clic en <b>Export as OPML</b>",
+    "step4": "Sube el archivo descargado aquí"
   },
   "settings": {
     "title": "Configuración",
-    "interests": "Intereses y umbral de relevancia",
+    "interestsTitle": "Intereses y umbral de relevancia",
+    "interestsDescription": "Claude usa esto para puntuar cada artículo del 0 al 100.",
     "interestsLabel": "Mis intereses",
-    "interestsHint": "Describe en lenguaje natural qué quieres leer.",
-    "threshold": "Umbral de relevancia",
-    "thresholdHint": "Solo verás artículos con puntuación mayor o igual al umbral.",
-    "save": "Guardar",
-    "saved": "¡Guardado!"
+    "interestsPlaceholder": "Me interesa la IA, el desarrollo de software, diseño de producto, startups...",
+    "interestsHint": "Describe en lenguaje natural qué quieres leer. Claude usará esto para puntuar cada artículo del 0 al 100.",
+    "thresholdLabel": "Umbral de relevancia",
+    "thresholdAll": "0 · Todo",
+    "thresholdBalanced": "50 · Equilibrado",
+    "thresholdBest": "100 · Solo lo mejor",
+    "thresholdHint": "Solo verás artículos con puntuación ≥ {threshold}. Más alto = menos artículos, más relevantes.",
+    "t0": "Todo",
+    "t25": "Poco filtrado",
+    "t50": "Equilibrado",
+    "t75": "Estricto",
+    "t100": "Máximo",
+    "save": "Guardar configuración",
+    "saveSuccess": "Configuración guardada",
+    "saveError": "Error al guardar",
+    "syncTitle": "Sincronización",
+    "syncDescription": "Los feeds se actualizan automáticamente cada hora vía QStash. Puedes forzarlo manualmente.",
+    "syncHint": "Proceso en segundo plano — puede tardar varios minutos con muchos feeds. También puedes actualizar feeds individuales desde su página de detalle.",
+    "diagnosticsTitle": "Diagnóstico",
+    "diagnosticsDescription": "Estado del cron de QStash y del scoring de IA.",
+    "importTitle": "Importar feeds",
+    "importDescription": "Importa tus suscripciones desde Feedly u otro lector vía OPML.",
+    "languageTitle": "Idioma",
+    "languageDescription": "Cambia el idioma de la interfaz."
+  },
+  "diagnostics": {
+    "loading": "Cargando diagnóstico…",
+    "loadFailed": "No se pudo cargar el diagnóstico.",
+    "lastCron": "Último disparo QStash",
+    "never": "Nunca",
+    "cronNeverHint": "Los feeds aún no se han sincronizado via cron",
+    "scoredArticles": "Artículos puntuados",
+    "noInterestsHint": "Configura tus intereses para activar el scoring",
+    "pendingHint": "{count} pendientes — se puntúan en el próximo cron",
+    "allScored": "Todo puntuado",
+    "refresh": "Actualizar",
+    "aiTestTitle": "Test de IA en vivo",
+    "testButton": "Probar ahora",
+    "testing": "Probando…",
+    "needsInterests": "Rellena tus intereses para poder hacer el test.",
+    "aiOk": "IA funcionando · {ms}ms",
+    "score": "Score: {score}/100",
+    "aiError": "Error de IA",
+    "lessThan1min": "hace menos de 1 min",
+    "minutes": "hace {m} min",
+    "hours": "hace {h}h",
+    "days": "hace {d}d"
+  },
+  "sync": {
+    "noFeeds": "No hay feeds para sincronizar",
+    "button": "Sincronizar todos los feeds ahora",
+    "currentFeed": "Feed {current}/{total}",
+    "newArticles": "{count} artículos nuevos",
+    "withErrors": "{count} nuevos · {errors} feeds con error",
+    "done": "Sincronización completada",
+    "doneSummary": "{count} artículos nuevos · {errors, plural, =0 {sin errores} other {# feeds con error}}"
+  },
+  "saved": {
+    "title": "Artículos guardados",
+    "empty": "No tienes artículos guardados",
+    "emptyHint": "Toca el icono de marcador en cualquier artículo para guardarlo aquí."
+  },
+  "language": {
+    "es": "Español",
+    "en": "English",
+    "label": "Idioma / Language"
   }
 }

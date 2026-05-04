@@ -5,6 +5,7 @@ import { Loader2, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import { useTranslations } from 'next-intl'
 
 interface TopicPreview {
   query: string
@@ -24,6 +25,7 @@ export function TopicInput({ onConfirm }: TopicInputProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const t = useTranslations('topic')
 
   const handleGenerate = async () => {
     if (!text.trim()) return
@@ -41,11 +43,11 @@ export function TopicInput({ onConfirm }: TopicInputProps) {
       })
       const data = await res.json() as { preview?: TopicPreview[]; error?: string }
       if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`)
-      if (!data.preview?.length) throw new Error('Claude no encontró queries para ese texto')
+      if (!data.preview?.length) throw new Error(t('notFound'))
       setPreviews(data.preview)
       setSelected(new Set(data.preview.map((p) => p.url)))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido')
+      setError(err instanceof Error ? err.message : t('createError'))
     } finally {
       setLoading(false)
     }
@@ -76,7 +78,7 @@ export function TopicInput({ onConfirm }: TopicInputProps) {
       setSelected(new Set())
       setTimeout(() => setSuccess(false), 3000)
     } catch {
-      setError('Error creando los feeds')
+      setError(t('createError'))
     } finally {
       setConfirming(false)
     }
@@ -85,7 +87,7 @@ export function TopicInput({ onConfirm }: TopicInputProps) {
   return (
     <div className="flex flex-col gap-3">
       <Textarea
-        placeholder="Ej: quiero noticias de IA aplicada a productividad, sin fundraising ni inversión..."
+        placeholder={t('placeholder')}
         value={text}
         onChange={(e) => { setText(e.target.value); setError(null) }}
         rows={3}
@@ -94,7 +96,7 @@ export function TopicInput({ onConfirm }: TopicInputProps) {
 
       <Button onClick={handleGenerate} disabled={loading || !text.trim()} className="self-start">
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-        {loading ? 'Analizando con Claude…' : 'Generar con IA'}
+        {loading ? t('generating') : t('generate')}
       </Button>
 
       {error && (
@@ -107,14 +109,14 @@ export function TopicInput({ onConfirm }: TopicInputProps) {
       {success && (
         <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 rounded-md p-3">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
-          Feeds creados correctamente
+          {t('createSuccess')}
         </div>
       )}
 
       {previews.length > 0 && (
         <div className="flex flex-col gap-3 border rounded-lg p-4 bg-muted/40">
           <p className="text-sm font-medium">
-            Claude sugiere {previews.length} feed{previews.length > 1 ? 's' : ''} — selecciona los que quieras:
+            {t('suggests', { count: previews.length })}
           </p>
           <ul className="flex flex-col gap-2">
             {previews.map((p) => (
@@ -138,7 +140,7 @@ export function TopicInput({ onConfirm }: TopicInputProps) {
             className="self-start mt-1"
           >
             {confirming && <Loader2 className="h-4 w-4 animate-spin" />}
-            Crear {selected.size} feed{selected.size !== 1 ? 's' : ''}
+            {t('create', { count: selected.size })}
           </Button>
         </div>
       )}

@@ -3,17 +3,19 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Rss, Bookmark, Settings } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
-const navItems = [
-  { href: '/', label: 'Feed', icon: LayoutDashboard },
-  { href: '/feeds', label: 'Feeds', icon: Rss },
-  { href: '/saved', label: 'Guardados', icon: Bookmark },
-  { href: '/settings', label: 'Ajustes', icon: Settings },
-]
-
 export function MobileNav() {
+  const t = useTranslations('nav')
   const pathname = usePathname()
+
+  const navItems = [
+    { href: '/', label: t('feed'), icon: LayoutDashboard },
+    { href: '/feeds', label: t('feeds'), icon: Rss },
+    { href: '/saved', label: t('saved'), icon: Bookmark },
+    { href: '/settings', label: t('settings'), icon: Settings },
+  ]
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-background z-10">
