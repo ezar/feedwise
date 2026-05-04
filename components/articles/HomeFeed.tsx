@@ -313,7 +313,7 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
         </div>
       )}
 
-      {!hasMore && articles.length > PAGE_SIZE && (
+      {!hasMore && articles.length >= PAGE_SIZE && (
         <p className="text-xs text-muted-foreground text-center py-2">
           {t('reachedEnd', { count: articles.length })}
         </p>

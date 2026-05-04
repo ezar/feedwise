@@ -43,7 +43,6 @@ function scoreBarColor(score: number) {
 
 export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardProps) {
   const [saved, setSaved] = useState(article.is_saved)
-  const [read, setRead] = useState(article.is_read)
   const { toast } = useToast()
   const t = useTranslations('article')
 
@@ -67,8 +66,7 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
   }
 
   const handleClick = () => {
-    if (!read) {
-      setRead(true)
+    if (!article.is_read) {
       onMarkRead?.(article.id)
       fetch(`/api/articles/${article.id}`, {
         credentials: 'include',
@@ -83,13 +81,19 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
     ? new Date(article.published_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
     : null
 
-  const snippet = article.ai_summary
-    ?? (article.description ? article.description.replace(/<[^>]*>/g, '').trim() : null)
+  const rawDescription = article.description
+    ? article.description.replace(/<[^>]*>/g, '').trim()
+    : null
+  const titlePrefix = article.title.slice(0, 40).toLowerCase()
+  const descriptionIsDupe = rawDescription
+    ? rawDescription.toLowerCase().startsWith(titlePrefix) || rawDescription.length < 30
+    : true
+  const snippet = article.ai_summary ?? (descriptionIsDupe ? null : rawDescription)
 
   const score = article.relevance_score
 
   return (
-    <Card className={cn('transition-all duration-200 hover:shadow-md', read && 'opacity-60')}>
+    <Card className={cn('transition-all duration-200 hover:shadow-md', article.is_read && 'opacity-60')}>
       <CardContent className="p-4 flex flex-col gap-2.5">
         {/* Title row */}
         <div className="flex items-start justify-between gap-2">
@@ -122,12 +126,17 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
 
         {/* Snippet */}
         {snippet && (
-          <p className={cn(
-            'text-xs text-muted-foreground leading-relaxed line-clamp-2',
-            article.ai_summary && 'italic'
-          )}>
-            {snippet}
-          </p>
+          <div className="flex items-start gap-1">
+            {article.ai_summary && (
+              <Sparkles className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+            )}
+            <p className={cn(
+              'text-xs text-muted-foreground leading-relaxed line-clamp-2',
+              article.ai_summary && 'italic'
+            )}>
+              {snippet}
+            </p>
+          </div>
         )}
 
         {/* AI score bar */}
