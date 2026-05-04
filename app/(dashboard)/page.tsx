@@ -14,11 +14,10 @@ export default async function HomePage() {
 
   const { data: profile } = await supabase
     .from('user_profile')
-    .select('threshold, interests')
+    .select('interests')
     .eq('id', user!.id)
     .single()
 
-  const threshold = profile?.threshold ?? 50
   const hasInterests = !!(profile?.interests?.trim())
 
   const { data: articles } = await supabase
