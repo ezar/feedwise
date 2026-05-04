@@ -17,10 +17,9 @@ export function ShareButton({ articleId, title, url, summary: initialSummary }: 
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState<'link' | 'text' | null>(null)
   const [summary, setSummary] = useState(initialSummary ?? null)
-  const [summarizing, setSummarizing] = useState(false)
+  const [loading, setLoading] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
-  // Keep in sync if parent updates (e.g. after rescore)
   useEffect(() => { setSummary(initialSummary ?? null) }, [initialSummary])
 
   useEffect(() => {
@@ -32,10 +31,11 @@ export function ShareButton({ articleId, title, url, summary: initialSummary }: 
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
-  const shareText = summary ? `${title}\n\n${summary}\n\n${url}` : `${title}\n\n${url}`
+  // On mobile, native share is available — use it directly (no dropdown)
+  const hasNativeShare = typeof window !== 'undefined' && typeof navigator.share === 'function'
 
-  const generateSummary = async () => {
-    setSummarizing(true)
+  const fetchSummary = async (): Promise<string | null> => {
+    if (summary) return summary
     try {
       const res = await fetch(`/api/articles/${articleId}/summarize`, {
         method: 'POST',
@@ -43,14 +43,26 @@ export function ShareButton({ articleId, title, url, summary: initialSummary }: 
       })
       if (res.ok) {
         const data = await res.json() as { summary?: string }
-        if (data.summary) setSummary(data.summary)
+        if (data.summary) { setSummary(data.summary); return data.summary }
       }
+    } catch { /* silent */ }
+    return null
+  }
+
+  // Mobile: single tap → native share sheet (no dropdown)
+  const handleNativeShare = async () => {
+    setLoading(true)
+    const text = await fetchSummary()
+    try {
+      await navigator.share({ title, text: text ?? undefined, url })
     } catch {
-      // silent
+      // User cancelled or share failed — ignore
     } finally {
-      setSummarizing(false)
+      setLoading(false)
     }
   }
+
+  const shareText = summary ? `${title}\n\n${summary}\n\n${url}` : `${title}\n\n${url}`
 
   const copyLink = async () => {
     await navigator.clipboard.writeText(url)
@@ -64,6 +76,12 @@ export function ShareButton({ articleId, title, url, summary: initialSummary }: 
     setTimeout(() => { setCopied(null); setOpen(false) }, 1500)
   }
 
+  const generateSummary = async () => {
+    setLoading(true)
+    await fetchSummary()
+    setLoading(false)
+  }
+
   const openWhatsApp = () => {
     window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank', 'noopener')
     setOpen(false)
@@ -74,15 +92,26 @@ export function ShareButton({ articleId, title, url, summary: initialSummary }: 
     setOpen(false)
   }
 
-  const nativeShare = async () => {
-    if (typeof navigator.share === 'function') {
-      await navigator.share({ title, text: summary ?? undefined, url })
-      setOpen(false)
-    }
+  // Mobile: direct native share, no dropdown
+  if (hasNativeShare) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 shrink-0"
+        onClick={handleNativeShare}
+        disabled={loading}
+        title={t('button')}
+      >
+        {loading
+          ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          : <Share2 className="h-4 w-4 text-muted-foreground" />
+        }
+      </Button>
+    )
   }
 
-  const hasNativeShare = typeof window !== 'undefined' && typeof navigator.share === 'function'
-
+  // Desktop: dropdown with copy + social links
   return (
     <div ref={ref} className="relative">
       <Button
@@ -97,15 +126,6 @@ export function ShareButton({ articleId, title, url, summary: initialSummary }: 
 
       {open && (
         <div className="absolute right-0 top-9 z-20 w-48 rounded-lg border bg-background shadow-lg py-1 text-sm">
-          {hasNativeShare && (
-            <button
-              onClick={nativeShare}
-              className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted transition-colors"
-            >
-              <Share2 className="h-3.5 w-3.5 text-muted-foreground" />
-              {t('button')}
-            </button>
-          )}
           <button
             onClick={copyLink}
             className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted transition-colors"
@@ -114,7 +134,6 @@ export function ShareButton({ articleId, title, url, summary: initialSummary }: 
             {copied === 'link' ? t('copied') : t('copy')}
           </button>
 
-          {/* Summary section */}
           {summary ? (
             <button
               onClick={copyText}
@@ -126,14 +145,14 @@ export function ShareButton({ articleId, title, url, summary: initialSummary }: 
           ) : (
             <button
               onClick={generateSummary}
-              disabled={summarizing}
+              disabled={loading}
               className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted transition-colors disabled:opacity-60"
             >
-              {summarizing
+              {loading
                 ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                 : <Sparkles className="h-3.5 w-3.5 text-purple-500" />
               }
-              {summarizing ? t('summarizing') : t('summarize')}
+              {loading ? t('summarizing') : t('summarize')}
             </button>
           )}
 
