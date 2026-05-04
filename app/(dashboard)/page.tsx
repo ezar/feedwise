@@ -52,7 +52,7 @@ export default async function HomePage() {
         </Link>
       )}
 
-      <HomeFeed initialArticles={articles ?? []} threshold={threshold} hasInterests={hasInterests} />
+      <HomeFeed initialArticles={articles ?? []} />
     </div>
   )
 }

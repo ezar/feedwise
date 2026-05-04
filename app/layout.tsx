@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
+import Image from 'next/image'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
@@ -103,7 +104,7 @@ export default async function RootLayout({
       </head>
       <body className={inter.className}>
         <div id="app-splash" aria-hidden="true">
-          <img src="/icons/icon-192.png" alt="" width={72} height={72} />
+          <Image src="/icons/icon-192.png" alt="" width={72} height={72} unoptimized />
           <span className="splash-name">feedwise</span>
           <div className="splash-dots">
             <span className="splash-dot" />

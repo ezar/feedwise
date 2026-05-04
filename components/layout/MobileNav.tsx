@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Rss, Bookmark, Settings, BarChart3, Sparkles } from 'lucide-react'
+import { LayoutDashboard, Rss, Bookmark, Settings, Sparkles } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 

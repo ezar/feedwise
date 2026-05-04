@@ -33,7 +33,7 @@ export default function BriefingPage() {
     } catch { /* ignore */ }
   }, [today])
 
-  const generate = async (force = false) => {
+  const generate = async () => {
     setLoading(true)
     setError(null)
     try {
@@ -73,7 +73,7 @@ export default function BriefingPage() {
           </p>
         </div>
         {briefing && (
-          <Button variant="outline" size="sm" onClick={() => void generate(true)} disabled={loading}>
+          <Button variant="outline" size="sm" onClick={() => void generate()} disabled={loading}>
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             {t('regenerate')}
           </Button>

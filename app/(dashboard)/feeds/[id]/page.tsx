@@ -107,8 +107,6 @@ export default async function FeedDetailPage({
 
       <HomeFeed
         initialArticles={articles ?? []}
-        threshold={0}
-        hasInterests={false}
         feedId={params.id}
       />
     </div>

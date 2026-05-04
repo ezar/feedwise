@@ -26,8 +26,6 @@ interface Article {
 
 interface HomeFeedProps {
   initialArticles: Article[]
-  threshold: number
-  hasInterests: boolean
   feedId?: string
 }
 
@@ -35,7 +33,7 @@ const PAGE_SIZE = 40
 const PULL_THRESHOLD = 72   // px to trigger refresh
 const STALE_MS = 5 * 60 * 1000 // auto-refresh after 5 min hidden
 
-export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: HomeFeedProps) {
+export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
   const t = useTranslations('feed')
   const router = useRouter()
 
