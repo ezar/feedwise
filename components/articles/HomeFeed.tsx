@@ -22,11 +22,12 @@ interface HomeFeedProps {
   initialArticles: Article[]
   threshold: number
   hasInterests: boolean
+  feedId?: string
 }
 
 const PAGE_SIZE = 40
 
-export function HomeFeed({ initialArticles, threshold, hasInterests }: HomeFeedProps) {
+export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: HomeFeedProps) {
   const [articles, setArticles] = useState<Article[]>(initialArticles)
   const [page, setPage] = useState(1)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -95,7 +96,8 @@ export function HomeFeed({ initialArticles, threshold, hasInterests }: HomeFeedP
     setLoadingMore(true)
     try {
       const nextPage = pageRef.current + 1
-      const res = await fetch(`/api/articles?page=${nextPage}`, { credentials: 'include' })
+      const feedParam = feedId ? `&feed_id=${feedId}` : ''
+      const res = await fetch(`/api/articles?page=${nextPage}${feedParam}`, { credentials: 'include' })
       const data = await res.json() as { articles?: Article[] }
       const next = data.articles ?? []
       setArticles((prev) => [...prev, ...next])

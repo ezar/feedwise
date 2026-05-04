@@ -8,6 +8,7 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const minScore = parseInt(searchParams.get('min_score') ?? '0')
   const savedOnly = searchParams.get('saved') === 'true'
+  const feedId = searchParams.get('feed_id')
   const page = parseInt(searchParams.get('page') ?? '1')
   const pageSize = 40
   const offset = (page - 1) * pageSize
@@ -24,10 +25,20 @@ export async function GET(req: Request) {
   let query = supabase
     .from('articles')
     .select('*, feeds(title)')
-    .or(`relevance_score.gte.${scoreFilter},relevance_score.is.null`)
-    .order('relevance_score', { ascending: false, nullsFirst: false })
-    .order('published_at', { ascending: false })
-    .range(offset, offset + pageSize - 1)
+
+  if (feedId) {
+    // Feed detail: show all articles for this feed, ordered by date
+    query = query
+      .eq('feed_id', feedId)
+      .order('published_at', { ascending: false })
+  } else {
+    query = query
+      .or(`relevance_score.gte.${scoreFilter},relevance_score.is.null`)
+      .order('relevance_score', { ascending: false, nullsFirst: false })
+      .order('published_at', { ascending: false })
+  }
+
+  query = query.range(offset, offset + pageSize - 1)
 
   if (savedOnly) {
     query = query.eq('is_saved', true)

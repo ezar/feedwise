@@ -3,7 +3,8 @@ import { ArrowLeft, Rss, Sparkles, Clock, ExternalLink, AlertCircle } from 'luci
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
-import { ArticleList } from '@/components/articles/ArticleList'
+import { HomeFeed } from '@/components/articles/HomeFeed'
+import { DigestButton } from '@/components/articles/DigestButton'
 import { FetchButton } from '@/components/feeds/FetchButton'
 
 export const dynamic = 'force-dynamic'
@@ -27,14 +28,13 @@ export default async function FeedDetailPage({
 
   const { data: articles } = await supabase
     .from('articles')
-    .select('*')
+    .select('*, feeds(title)')
     .eq('feed_id', params.id)
     .order('published_at', { ascending: false })
-    .limit(100)
+    .limit(40)
 
   const total = articles?.length ?? 0
-  const scored = articles?.filter((a) => a.ai_processed).length ?? 0
-  const pending = total - scored
+  const pending = articles?.filter((a) => !a.ai_processed).length ?? 0
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -101,10 +101,15 @@ export default async function FeedDetailPage({
         </div>
       )}
 
-      <ArticleList
+      <div className="mb-4">
+        <DigestButton feedId={params.id} />
+      </div>
+
+      <HomeFeed
         initialArticles={articles ?? []}
-        emptyMessage="Sin artículos todavía"
-        emptyHint="Pulsa «Actualizar ahora» para descargar artículos manualmente."
+        threshold={0}
+        hasInterests={false}
+        feedId={params.id}
       />
     </div>
   )
