@@ -180,11 +180,14 @@
     "minutes": "{m} min ago",
     "hours": "{h}h ago",
     "days": "{d}d ago",
-    "activeSchedules": "Active schedules",
-    "schedulesHint": "Some feeds have no schedule — re-register to enable automatic updates.",
-    "reschedule": "Re-register",
-    "rescheduleResult": "{scheduled} of {total} feeds registered",
-    "rescheduleError": "Error re-registering"
+    "masterSchedule": "Hourly cron",
+    "scheduleActive": "Active",
+    "scheduleInactive": "Inactive",
+    "masterScheduleHint": "No dispatch schedule found — activate it to enable automatic feed updates.",
+    "activate": "Activate",
+    "reschedule": "Reset",
+    "scheduleActivated": "Hourly cron activated",
+    "rescheduleError": "Error activating schedule"
   },
   "sync": {
     "noFeeds": "No feeds to sync",

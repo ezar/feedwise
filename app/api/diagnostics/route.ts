@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { scoreArticle } from '@/lib/ai/scorer'
+import { getDispatchScheduleId } from '@/lib/qstash/scheduler'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,7 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const [feedsRes, profileRes, allFeedsRes, totalRes, scoredRes] = await Promise.all([
+  const [feedsRes, profileRes, totalFeedsRes, totalRes, scoredRes, scheduleId] = await Promise.all([
     supabase
       .from('feeds')
       .select('last_fetched_at')
@@ -23,7 +24,7 @@ export async function GET() {
       .single(),
     supabase
       .from('feeds')
-      .select('id, qstash_schedule_id')
+      .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id),
     supabase
       .from('articles')
@@ -32,18 +33,16 @@ export async function GET() {
       .from('articles')
       .select('id', { count: 'exact', head: true })
       .not('relevance_score', 'is', null),
+    getDispatchScheduleId().catch(() => null),
   ])
-
-  const allFeeds = allFeedsRes.data ?? []
-  const feedsWithSchedule = allFeeds.filter((f) => f.qstash_schedule_id).length
 
   return Response.json({
     lastCron: feedsRes.data?.[0]?.last_fetched_at ?? null,
     totalArticles: totalRes.count ?? 0,
     scoredArticles: scoredRes.count ?? 0,
     hasInterests: !!(profileRes.data?.interests?.trim()),
-    totalFeeds: allFeeds.length,
-    feedsWithSchedule,
+    totalFeeds: totalFeedsRes.count ?? 0,
+    hasDispatchSchedule: !!scheduleId,
   })
 }
 

@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { scheduleHourlyFetch, removeSchedule } from '@/lib/qstash/scheduler'
+import { createDispatchSchedule, getDispatchScheduleId, removeSchedule } from '@/lib/qstash/scheduler'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,33 +8,29 @@ export async function POST() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: feeds, error } = await supabase
-    .from('feeds')
-    .select('id, qstash_schedule_id')
-    .eq('user_id', user.id)
+  try {
+    // Remove existing dispatch schedule if any
+    const existingId = await getDispatchScheduleId()
+    if (existingId) await removeSchedule(existingId)
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
-  if (!feeds?.length) return Response.json({ scheduled: 0, total: 0 })
+    // Also clean up any legacy per-feed schedules
+    const { data: feeds } = await supabase
+      .from('feeds')
+      .select('id, qstash_schedule_id')
+      .eq('user_id', user.id)
+      .not('qstash_schedule_id', 'is', null)
 
-  let scheduled = 0
-  const errors: string[] = []
-
-  for (const feed of feeds) {
-    try {
-      // Remove old schedule if it exists
+    for (const feed of feeds ?? []) {
       if (feed.qstash_schedule_id) {
-        await removeSchedule(feed.qstash_schedule_id).catch(() => {})
+        await removeSchedule(feed.qstash_schedule_id)
+        await supabase.from('feeds').update({ qstash_schedule_id: null }).eq('id', feed.id)
       }
-      const scheduleId = await scheduleHourlyFetch(feed.id)
-      await supabase
-        .from('feeds')
-        .update({ qstash_schedule_id: scheduleId })
-        .eq('id', feed.id)
-      scheduled++
-    } catch (err) {
-      errors.push(err instanceof Error ? err.message : String(err))
     }
-  }
 
-  return Response.json({ scheduled, total: feeds.length, errors })
+    const scheduleId = await createDispatchSchedule()
+    return Response.json({ ok: true, scheduleId })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    return Response.json({ error: msg }, { status: 500 })
+  }
 }

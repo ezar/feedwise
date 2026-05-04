@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { scheduleHourlyFetch } from '@/lib/qstash/scheduler'
+import { publishFeedJob } from '@/lib/qstash/scheduler'
 
 export async function GET() {
   const supabase = createClient()
@@ -39,18 +39,10 @@ export async function POST(req: Request) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
 
-  let scheduleWarning: string | undefined
-  try {
-    const scheduleId = await scheduleHourlyFetch(feed.id)
-    await supabase
-      .from('feeds')
-      .update({ qstash_schedule_id: scheduleId })
-      .eq('id', feed.id)
-    feed.qstash_schedule_id = scheduleId
-  } catch (err) {
-    console.error('Failed to schedule QStash job:', err)
-    scheduleWarning = 'Feed guardado pero no se pudo programar la actualización automática. Comprueba la configuración de QStash.'
-  }
+  // Trigger an immediate fetch via message (master schedule handles hourly runs)
+  publishFeedJob(feed.id as string).catch((err) =>
+    console.error('Failed to publish feed job:', err)
+  )
 
-  return Response.json({ feed, warning: scheduleWarning }, { status: 201 })
+  return Response.json({ feed }, { status: 201 })
 }

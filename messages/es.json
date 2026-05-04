@@ -180,11 +180,14 @@
     "minutes": "hace {m} min",
     "hours": "hace {h}h",
     "days": "hace {d}d",
-    "activeSchedules": "Schedules activos",
-    "schedulesHint": "Algunos feeds no tienen schedule — re-regístralos para activar las actualizaciones automáticas.",
-    "reschedule": "Re-registrar",
-    "rescheduleResult": "{scheduled} de {total} feeds registrados",
-    "rescheduleError": "Error al re-registrar"
+    "masterSchedule": "Cron horario",
+    "scheduleActive": "Activo",
+    "scheduleInactive": "Inactivo",
+    "masterScheduleHint": "No hay schedule de dispatch — actívalo para habilitar las actualizaciones automáticas.",
+    "activate": "Activar",
+    "reschedule": "Reiniciar",
+    "scheduleActivated": "Cron horario activado",
+    "rescheduleError": "Error al activar el schedule"
   },
   "sync": {
     "noFeeds": "No hay feeds para sincronizar",

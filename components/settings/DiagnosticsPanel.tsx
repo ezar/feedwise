@@ -12,7 +12,7 @@ interface DiagData {
   scoredArticles: number
   hasInterests: boolean
   totalFeeds: number
-  feedsWithSchedule: number
+  hasDispatchSchedule: boolean
 }
 
 interface TestResult {
@@ -64,8 +64,12 @@ export function DiagnosticsPanel() {
     setRescheduleMsg(null)
     try {
       const res = await fetch('/api/feeds/reschedule', { method: 'POST', credentials: 'include' })
-      const json = await res.json() as { scheduled: number; total: number; errors?: string[] }
-      setRescheduleMsg(t('rescheduleResult', { scheduled: json.scheduled, total: json.total }))
+      const json = await res.json() as { ok: boolean; scheduleId?: string; error?: string }
+      if (json.ok) {
+        setRescheduleMsg(t('scheduleActivated'))
+      } else {
+        setRescheduleMsg(json.error ?? t('rescheduleError'))
+      }
       await load()
     } catch {
       setRescheduleMsg(t('rescheduleError'))
@@ -78,7 +82,6 @@ export function DiagnosticsPanel() {
     ? (Date.now() - new Date(data.lastCron).getTime()) < 2 * 60 * 60 * 1000
     : false
 
-  const schedulesOk = data ? data.feedsWithSchedule === data.totalFeeds && data.totalFeeds > 0 : false
   const pendingArticles = (data?.totalArticles ?? 0) - (data?.scoredArticles ?? 0)
 
   return (
@@ -102,31 +105,29 @@ export function DiagnosticsPanel() {
               : t('cronNeverHint')}
           />
 
-          {/* Active schedules */}
-          {data.totalFeeds > 0 && (
-            <Row
-              icon={schedulesOk
-                ? <CheckCircle2 className="h-4 w-4 text-green-500" />
-                : <AlertTriangle className="h-4 w-4 text-yellow-500" />}
-              label={t('activeSchedules')}
-              value={`${data.feedsWithSchedule} / ${data.totalFeeds}`}
-              sub={!schedulesOk ? t('schedulesHint') : undefined}
-              action={
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs"
-                  disabled={rescheduling}
-                  onClick={reschedule}
-                >
-                  {rescheduling
-                    ? <Loader2 className="h-3 w-3 animate-spin" />
-                    : <CalendarClock className="h-3 w-3" />}
-                  {t('reschedule')}
-                </Button>
-              }
-            />
-          )}
+          {/* Master dispatch schedule */}
+          <Row
+            icon={data.hasDispatchSchedule
+              ? <CheckCircle2 className="h-4 w-4 text-green-500" />
+              : <AlertTriangle className="h-4 w-4 text-yellow-500" />}
+            label={t('masterSchedule')}
+            value={data.hasDispatchSchedule ? t('scheduleActive') : t('scheduleInactive')}
+            sub={!data.hasDispatchSchedule ? t('masterScheduleHint') : undefined}
+            action={
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs"
+                disabled={rescheduling}
+                onClick={reschedule}
+              >
+                {rescheduling
+                  ? <Loader2 className="h-3 w-3 animate-spin" />
+                  : <CalendarClock className="h-3 w-3" />}
+                {data.hasDispatchSchedule ? t('reschedule') : t('activate')}
+              </Button>
+            }
+          />
 
           {rescheduleMsg && (
             <p className="text-xs text-muted-foreground pl-7">{rescheduleMsg}</p>
