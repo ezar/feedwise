@@ -24,7 +24,6 @@ export default async function HomePage() {
   const { data: articles } = await supabase
     .from('articles')
     .select('*, feeds(title)')
-    .or(`relevance_score.gte.${threshold},relevance_score.is.null`)
     .order('relevance_score', { ascending: false, nullsFirst: false })
     .order('published_at', { ascending: false })
     .limit(40)
@@ -37,7 +36,7 @@ export default async function HomePage() {
         <div>
           <h2 className="text-xl font-semibold">{t('title')}</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {t('threshold', { value: threshold })} · {t('articles', { count })}
+            {t('articles', { count })}
           </p>
         </div>
         <RefreshButton />

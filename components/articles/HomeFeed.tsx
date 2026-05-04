@@ -213,12 +213,8 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
         <div className="rounded-full bg-muted p-4">
           <Newspaper className="h-8 w-8 text-muted-foreground" />
         </div>
-        <p className="font-medium">
-          {hasInterests ? t('noRelevant') : t('noArticles')}
-        </p>
-        <p className="text-sm text-muted-foreground max-w-xs">
-          {hasInterests ? t('noRelevantHint', { threshold }) : t('noArticlesHint')}
-        </p>
+        <p className="font-medium">{t('noArticles')}</p>
+        <p className="text-sm text-muted-foreground max-w-xs">{t('noArticlesHint')}</p>
       </div>
     )
   }
