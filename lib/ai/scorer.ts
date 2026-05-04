@@ -14,8 +14,9 @@ export async function scoreArticle(
   const description = article.description?.slice(0, 400) ?? ''
 
   const response = await client.messages.create({
-    model: 'claude-haiku-4-5',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 150,
+    system: 'Respond only with valid JSON. No markdown, no code blocks, no explanations.',
     messages: [
       {
         role: 'user',
@@ -35,16 +36,17 @@ Responde ÚNICAMENTE con JSON válido sin markdown:
     ],
   })
 
-  const text =
-    response.content[0].type === 'text' ? response.content[0].text : '{}'
+  const raw = response.content[0].type === 'text' ? response.content[0].text.trim() : '{}'
+  const text = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
 
   try {
     const parsed = JSON.parse(text) as Partial<ScoredArticle>
     return {
-      score: Math.min(100, Math.max(0, parsed.score ?? 0)),
+      score: Math.min(100, Math.max(0, Number(parsed.score ?? 0))),
       summary: parsed.summary ?? '',
     }
   } catch {
+    console.error('Error parsing scorer response:', text)
     return { score: 0, summary: '' }
   }
 }

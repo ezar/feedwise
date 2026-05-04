@@ -34,11 +34,9 @@ export async function POST(
     return Response.json({ error: msg }, { status: 422 })
   }
 
-  let inserted = 0
-  for (const item of items) {
-    const { error: upsertError } = await service
-      .from('articles')
-      .upsert(
+  const results = await Promise.all(
+    items.map((item) =>
+      service.from('articles').upsert(
         {
           feed_id: feed.id,
           guid: item.guid,
@@ -49,8 +47,9 @@ export async function POST(
         },
         { onConflict: 'guid', ignoreDuplicates: true }
       )
-    if (!upsertError) inserted++
-  }
+    )
+  )
+  const inserted = results.filter((r) => !r.error).length
 
   await service
     .from('feeds')

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Newspaper } from 'lucide-react'
 import { ArticleCard } from './ArticleCard'
 
@@ -29,6 +29,9 @@ export function ArticleList({
   emptyHint = 'Añade feeds y configura tus intereses para ver artículos relevantes.',
 }: ArticleListProps) {
   const [articles, setArticles] = useState(initialArticles)
+
+  // Sync when server re-renders (e.g. after router.refresh())
+  useEffect(() => { setArticles(initialArticles) }, [initialArticles])
 
   const handleSaveToggle = useCallback((id: string, saved: boolean) => {
     setArticles((prev) =>
