@@ -12,15 +12,13 @@ export async function summarizeArticle(
   const response = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 200,
+    system: `You are a summarizer for a news reader app. Always output only the summary — never ask questions, never add labels or explanations. Write in ${lang}. If the content is limited, infer from the title alone.`,
     messages: [
       {
         role: 'user',
-        content: `Summarize this article in 2-3 sentences in ${lang}, suitable for sharing on social media. Be concise and informative.
+        content: `Write a 2-3 sentence summary in ${lang} of the following article, suitable for sharing on social media:
 
-Title: ${article.title}
-${description ? `Content: ${description}` : ''}
-
-Reply with only the summary text, no quotes, no labels.`,
+Title: ${article.title}${description ? `\nContent: ${description}` : ''}`,
       },
     ],
   })
@@ -36,9 +34,14 @@ export interface ScoredArticle {
 
 export async function scoreArticle(
   article: { title: string; description?: string | null },
-  interests: string
+  interests: string,
+  locale: string = 'es'
 ): Promise<ScoredArticle> {
   const description = article.description?.slice(0, 400) ?? ''
+  const lang = locale === 'en' ? 'English' : 'Spanish'
+  const summaryInstruction = locale === 'en'
+    ? 'Write a 1-sentence summary in English.'
+    : 'Escribe un resumen de 1 frase en español.'
 
   const response = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
@@ -47,18 +50,18 @@ export async function scoreArticle(
     messages: [
       {
         role: 'user',
-        content: `Intereses del usuario: ${interests}
+        content: `User interests: ${interests}
 
-Artículo:
-Título: ${article.title}
-Descripción: ${description}
+Article:
+Title: ${article.title}
+Description: ${description}
 
-Puntúa del 0 al 100 la relevancia de este artículo para el usuario.
-0 = completamente irrelevante. 100 = exactamente lo que busca.
-Escribe un resumen de 1 frase en español.
+Score 0-100 the relevance of this article for the user.
+0 = completely irrelevant. 100 = exactly what they want.
+${summaryInstruction}
 
-Responde ÚNICAMENTE con JSON válido sin markdown:
-{"score": number, "summary": "string"}`,
+Reply ONLY with valid JSON, no markdown:
+{"score": number, "summary": "string in ${lang}"}`,
       },
     ],
   })

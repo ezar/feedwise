@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   const { data: feed, error } = await supabase
     .from('feeds')
-    .select('*, user_profile!inner(interests, threshold)')
+    .select('*, user_profile!inner(interests, threshold, locale)')
     .eq('id', feedId)
     .single()
 
@@ -67,8 +67,9 @@ export async function POST(req: NextRequest) {
     )
   )
 
-  const profile = feed.user_profile as { interests: string } | null
+  const profile = feed.user_profile as { interests: string; locale?: string } | null
   const interests = profile?.interests?.trim() ?? ''
+  const locale = profile?.locale ?? 'es'
 
   // Score unprocessed articles in parallel (cap at 10 concurrent AI calls)
   const toScore = upserted.filter((a) => a && !a.ai_processed)
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest) {
           await supabase.from('articles').update({ ai_processed: true }).eq('id', article.id)
           return
         }
-        const { score, summary } = await scoreArticle(article, interests)
+        const { score, summary } = await scoreArticle(article, interests, locale)
         await supabase
           .from('articles')
           .update({ relevance_score: score, ai_summary: summary, ai_processed: true })
