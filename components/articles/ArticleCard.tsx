@@ -104,7 +104,7 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
             <ExternalLink className="inline ml-1 h-3 w-3 opacity-0 group-hover:opacity-40 transition-opacity" />
           </a>
           <div className="flex items-center shrink-0 mt-0.5">
-            <ShareButton title={article.title} url={article.url} summary={article.ai_summary} />
+            <ShareButton articleId={article.id} title={article.title} url={article.url} summary={article.ai_summary} />
             <Button
               variant="ghost"
               size="icon"

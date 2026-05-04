@@ -2,6 +2,33 @@ import Anthropic from '@anthropic-ai/sdk'
 
 const client = new Anthropic()
 
+export async function summarizeArticle(
+  article: { title: string; description?: string | null; url: string },
+  locale: string = 'es'
+): Promise<string> {
+  const description = article.description?.replace(/<[^>]*>/g, '').trim().slice(0, 800) ?? ''
+  const lang = locale === 'en' ? 'English' : 'Spanish'
+
+  const response = await client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 200,
+    messages: [
+      {
+        role: 'user',
+        content: `Summarize this article in 2-3 sentences in ${lang}, suitable for sharing on social media. Be concise and informative.
+
+Title: ${article.title}
+${description ? `Content: ${description}` : ''}
+
+Reply with only the summary text, no quotes, no labels.`,
+      },
+    ],
+  })
+
+  const text = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
+  return text
+}
+
 export interface ScoredArticle {
   score: number
   summary: string

@@ -53,7 +53,9 @@
     "copyText": "Copiar resumen",
     "copied": "¡Copiado!",
     "whatsapp": "WhatsApp",
-    "linkedin": "LinkedIn"
+    "linkedin": "LinkedIn",
+    "summarize": "Resumir con IA",
+    "summarizing": "Resumiendo…"
   },
   "digest": {
     "button": "Digest IA",

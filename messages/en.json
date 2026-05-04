@@ -53,7 +53,9 @@
     "copyText": "Copy summary",
     "copied": "Copied!",
     "whatsapp": "WhatsApp",
-    "linkedin": "LinkedIn"
+    "linkedin": "LinkedIn",
+    "summarize": "Summarize with AI",
+    "summarizing": "Summarizing…"
   },
   "digest": {
     "button": "AI Digest",
