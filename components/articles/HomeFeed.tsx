@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Newspaper, CheckCheck, ArrowDown, LayoutList, LayoutGrid, Copy } from 'lucide-react'
+import { Loader2, Newspaper, CheckCheck, ArrowDown, LayoutList, LayoutGrid, Copy, ChevronUp } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { ArticleCard } from './ArticleCard'
 import { ArticleRow } from './ArticleRow'
@@ -51,6 +51,14 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
     return localStorage.getItem('feedwise-dedup') !== 'false'
   })
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
+
+  const toggleCard = (id: string) =>
+    setExpandedCards((prev) => {
+      const next = new Set(Array.from(prev))
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
 
   // Pull-to-refresh state
   const [pullDist, setPullDist] = useState(0)
@@ -332,7 +340,22 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
           {groups.map(({ main, dupes }) => (
             <div key={main.id}>
               <div ref={(el) => attachReadRef(el, main.id)}>
-                <ArticleRow article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+                {expandedCards.has(main.id) ? (
+                  <div>
+                    <button
+                      onClick={() => toggleCard(main.id)}
+                      className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-muted-foreground hover:text-foreground bg-muted/40 transition-colors border-b"
+                    >
+                      <ChevronUp className="h-3 w-3" />
+                      {t('collapse')}
+                    </button>
+                    <div className="p-2">
+                      <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+                    </div>
+                  </div>
+                ) : (
+                  <ArticleRow article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => toggleCard(main.id)} />
+                )}
               </div>
               {dupes.length > 0 && !expandedGroups.has(main.id) && (
                 <button
@@ -344,7 +367,22 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
               )}
               {dupes.length > 0 && expandedGroups.has(main.id) && dupes.map((dupe) => (
                 <div key={dupe.id} ref={(el) => attachReadRef(el, dupe.id)} className="opacity-60">
-                  <ArticleRow article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+                  {expandedCards.has(dupe.id) ? (
+                    <div>
+                      <button
+                        onClick={() => toggleCard(dupe.id)}
+                        className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-muted-foreground hover:text-foreground bg-muted/40 transition-colors border-b"
+                      >
+                        <ChevronUp className="h-3 w-3" />
+                        {t('collapse')}
+                      </button>
+                      <div className="p-2">
+                        <ArticleCard article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+                      </div>
+                    </div>
+                  ) : (
+                    <ArticleRow article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => toggleCard(dupe.id)} />
+                  )}
                 </div>
               ))}
             </div>

@@ -45,7 +45,8 @@
     "dedupOn": "Deduplicación activada — pulsa para desactivar",
     "dedupOff": "Deduplicación desactivada — pulsa para activar",
     "dupeHidden": "{count} similares ocultos",
-    "dupesCollapsed": "+ {count} artículos similares"
+    "dupesCollapsed": "+ {count} artículos similares",
+    "collapse": "Colapsar"
   },
   "article": {
     "save": "Guardar artículo",

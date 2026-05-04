@@ -45,7 +45,8 @@
     "dedupOn": "Deduplication on — click to disable",
     "dedupOff": "Deduplication off — click to enable",
     "dupeHidden": "{count} similar hidden",
-    "dupesCollapsed": "+ {count} similar articles"
+    "dupesCollapsed": "+ {count} similar articles",
+    "collapse": "Collapse"
   },
   "article": {
     "save": "Save article",
