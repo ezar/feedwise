@@ -31,9 +31,13 @@
     "all": "All",
     "unreadFilter": "Unread",
     "unreadFilterCount": "Unread ({count})",
+    "markAllRead": "Mark all read",
     "allReadEmptyTitle": "All read",
     "allReadEmptyHint": "Switch to «All» to see your history.",
-    "reachedEnd": "You've reached the end · {count} articles"
+    "reachedEnd": "You've reached the end · {count} articles",
+    "pullToRefresh": "Release to refresh",
+    "pulling": "Pull to refresh",
+    "refreshing": "Refreshing…"
   },
   "article": {
     "save": "Save article",

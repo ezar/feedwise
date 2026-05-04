@@ -31,9 +31,13 @@
     "all": "Todos",
     "unreadFilter": "No leídos",
     "unreadFilterCount": "No leídos ({count})",
+    "markAllRead": "Marcar todo leído",
     "allReadEmptyTitle": "Todo leído",
     "allReadEmptyHint": "Cambia a «Todos» para ver el historial.",
-    "reachedEnd": "Has llegado al final · {count} artículos"
+    "reachedEnd": "Has llegado al final · {count} artículos",
+    "pullToRefresh": "Suelta para actualizar",
+    "pulling": "Tira para actualizar",
+    "refreshing": "Actualizando…"
   },
   "article": {
     "save": "Guardar artículo",
