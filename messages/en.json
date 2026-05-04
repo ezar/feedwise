@@ -38,7 +38,9 @@
     "reachedEnd": "You've reached the end · {count} articles",
     "pullToRefresh": "Release to refresh",
     "pulling": "Pull to refresh",
-    "refreshing": "Refreshing…"
+    "refreshing": "Refreshing…",
+    "viewCompact": "Compact view",
+    "viewCard": "Card view"
   },
   "article": {
     "save": "Save article",

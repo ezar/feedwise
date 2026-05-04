@@ -2,10 +2,13 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Newspaper, CheckCheck, ArrowDown } from 'lucide-react'
+import { Loader2, Newspaper, CheckCheck, ArrowDown, LayoutList, LayoutGrid } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { ArticleCard } from './ArticleCard'
+import { ArticleRow } from './ArticleRow'
 import { cn } from '@/lib/utils'
+
+type ViewMode = 'card' | 'compact'
 
 interface Article {
   id: string
@@ -40,6 +43,10 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
   const [hasMore, setHasMore] = useState(initialArticles.length === PAGE_SIZE)
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
   const [unreadSnapshot, setUnreadSnapshot] = useState<Set<string>>(new Set())
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window === 'undefined') return 'card'
+    return (localStorage.getItem('feedwise-view') as ViewMode) ?? 'card'
+  })
 
   // Pull-to-refresh state
   const [pullDist, setPullDist] = useState(0)
@@ -252,6 +259,20 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
               <span className="hidden sm:inline">{t('markAllRead')}</span>
             </button>
           )}
+          <button
+            onClick={() => {
+              const next: ViewMode = viewMode === 'card' ? 'compact' : 'card'
+              setViewMode(next)
+              localStorage.setItem('feedwise-view', next)
+            }}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            title={viewMode === 'card' ? t('viewCompact') : t('viewCard')}
+          >
+            {viewMode === 'card'
+              ? <LayoutList className="h-4 w-4" />
+              : <LayoutGrid className="h-4 w-4" />
+            }
+          </button>
           <div className="flex rounded-md border overflow-hidden text-xs">
             <button
               onClick={() => { setFilter('all'); setUnreadSnapshot(new Set()) }}
@@ -279,7 +300,20 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
       </div>
 
       {/* Article list */}
-      {visible.map((article) => (
+      {viewMode === 'compact' && (
+        <div className="border rounded-lg overflow-hidden divide-y">
+          {visible.map((article) => (
+            <div key={article.id} ref={(el) => attachReadRef(el, article.id)}>
+              <ArticleRow
+                article={article}
+                onSaveToggle={handleSaveToggle}
+                onMarkRead={handleMarkRead}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+      {viewMode === 'card' && visible.map((article) => (
         <div
           key={article.id}
           data-id={article.id}

@@ -38,7 +38,9 @@
     "reachedEnd": "Has llegado al final · {count} artículos",
     "pullToRefresh": "Suelta para actualizar",
     "pulling": "Tira para actualizar",
-    "refreshing": "Actualizando…"
+    "refreshing": "Actualizando…",
+    "viewCompact": "Vista compacta",
+    "viewCard": "Vista en tarjetas"
   },
   "article": {
     "save": "Guardar artículo",
