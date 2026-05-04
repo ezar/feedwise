@@ -15,9 +15,10 @@ export async function GET() {
   const [{ data: articles }, { count: totalRead }] = await Promise.all([
     supabase
       .from('articles')
-      .select('read_at, fetched_at, feeds!inner(title)')
+      .select('read_at, feeds!inner(title)')
       .eq('is_read', true)
-      .gte('fetched_at', thirtyDaysAgo)
+      .not('read_at', 'is', null)
+      .gte('read_at', thirtyDaysAgo)
       .order('read_at', { ascending: false }),
     supabase
       .from('articles')
@@ -39,7 +40,7 @@ export async function GET() {
   const feedMap = new Map<string, number>()
 
   for (const a of rows) {
-    const dateStr = ((a.read_at ?? a.fetched_at) as string | null)?.slice(0, 10) ?? ''
+    const dateStr = (a.read_at as string).slice(0, 10)
     if (dayMap.has(dateStr)) dayMap.set(dateStr, (dayMap.get(dateStr) ?? 0) + 1)
     const feedTitle = (a.feeds as { title?: string | null } | null)?.title ?? 'Unknown'
     feedMap.set(feedTitle, (feedMap.get(feedTitle) ?? 0) + 1)
@@ -52,11 +53,15 @@ export async function GET() {
     .slice(0, 5)
     .map(([title, count]) => ({ title, count }))
 
-  // Streak: consecutive days ending today
-  const readDaySet = new Set(rows.map((a) => ((a.read_at ?? a.fetched_at) as string | null)?.slice(0, 10)))
+  // Streak: consecutive days with reads ending today (or yesterday)
+  const readDaySet = new Set(rows.map((a) => (a.read_at as string).slice(0, 10)))
   let streak = 0
   const cur = new Date(today)
   cur.setHours(0, 0, 0, 0)
+  // Allow streak to count if today has no reads yet but yesterday does
+  if (!readDaySet.has(cur.toISOString().slice(0, 10))) {
+    cur.setDate(cur.getDate() - 1)
+  }
   while (readDaySet.has(cur.toISOString().slice(0, 10))) {
     streak++
     cur.setDate(cur.getDate() - 1)
