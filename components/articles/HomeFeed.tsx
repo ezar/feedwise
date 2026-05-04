@@ -32,6 +32,9 @@ export function HomeFeed({ initialArticles, threshold, hasInterests }: HomeFeedP
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(initialArticles.length === PAGE_SIZE)
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
+  // Snapshot of unread IDs at the moment the filter was activated.
+  // Keeps the list stable while scrolling marks articles as read.
+  const [unreadSnapshot, setUnreadSnapshot] = useState<Set<string>>(new Set())
 
   const sentinelRef = useRef<HTMLDivElement>(null)
   const loadingMoreRef = useRef(false)
@@ -123,7 +126,9 @@ export function HomeFeed({ initialArticles, threshold, hasInterests }: HomeFeedP
   }, [])
 
   const unreadCount = articles.filter((a) => !a.is_read).length
-  const visible = filter === 'unread' ? articles.filter((a) => !a.is_read) : articles
+  const visible = filter === 'unread'
+    ? articles.filter((a) => unreadSnapshot.has(a.id))
+    : articles
 
   if (articles.length === 0) {
     return (
@@ -153,7 +158,7 @@ export function HomeFeed({ initialArticles, threshold, hasInterests }: HomeFeedP
         </p>
         <div className="flex rounded-md border overflow-hidden text-xs">
           <button
-            onClick={() => setFilter('all')}
+            onClick={() => { setFilter('all'); setUnreadSnapshot(new Set()) }}
             className={cn(
               'px-3 py-1 transition-colors',
               filter === 'all' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
@@ -162,7 +167,10 @@ export function HomeFeed({ initialArticles, threshold, hasInterests }: HomeFeedP
             Todos
           </button>
           <button
-            onClick={() => setFilter('unread')}
+            onClick={() => {
+              setFilter('unread')
+              setUnreadSnapshot(new Set(articles.filter((a) => !a.is_read).map((a) => a.id)))
+            }}
             className={cn(
               'px-3 py-1 transition-colors border-l',
               filter === 'unread' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
@@ -188,7 +196,7 @@ export function HomeFeed({ initialArticles, threshold, hasInterests }: HomeFeedP
         </div>
       ))}
 
-      {filter === 'unread' && visible.length === 0 && (
+      {filter === 'unread' && unreadSnapshot.size === 0 && (
         <div className="flex flex-col items-center justify-center py-16 gap-2 text-center">
           <Newspaper className="h-7 w-7 text-muted-foreground" />
           <p className="text-sm font-medium">Todo leído</p>
