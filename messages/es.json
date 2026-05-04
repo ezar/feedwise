@@ -147,7 +147,16 @@
     "languageTitle": "Idioma",
     "languageDescription": "Cambia el idioma de la interfaz.",
     "pushTitle": "Notificaciones push",
-    "pushDescription": "Recibe avisos cuando lleguen artículos nuevos con puntuación alta."
+    "pushDescription": "Recibe avisos cuando lleguen artículos nuevos con puntuación alta.",
+    "rescoreTitle": "Re-puntuar artículos",
+    "rescoreDescription": "Re-puntúa tus artículos no leídos con los intereses que tienes guardados ahora.",
+    "rescoreButton": "Re-puntuar ahora",
+    "rescoring": "Puntuando…",
+    "rescoreSuccess": "{scored} artículos re-puntuados",
+    "rescoreRemaining": " · {remaining} más en el próximo cron",
+    "rescoreNone": "No hay artículos no leídos",
+    "rescoreNoInterests": "Guarda tus intereses primero",
+    "rescoreError": "Error al re-puntuar"
   },
   "diagnostics": {
     "loading": "Cargando diagnóstico…",

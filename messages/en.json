@@ -147,7 +147,16 @@
     "languageTitle": "Language",
     "languageDescription": "Change the interface language.",
     "pushTitle": "Push notifications",
-    "pushDescription": "Get notified when new high-score articles arrive."
+    "pushDescription": "Get notified when new high-score articles arrive.",
+    "rescoreTitle": "Re-score articles",
+    "rescoreDescription": "Re-scores your unread articles using your currently saved interests.",
+    "rescoreButton": "Re-score now",
+    "rescoring": "Scoring…",
+    "rescoreSuccess": "{scored} articles re-scored",
+    "rescoreRemaining": " · {remaining} more on next cron",
+    "rescoreNone": "No unread articles to score",
+    "rescoreNoInterests": "Save your interests first",
+    "rescoreError": "Error re-scoring"
   },
   "diagnostics": {
     "loading": "Loading diagnostics…",
