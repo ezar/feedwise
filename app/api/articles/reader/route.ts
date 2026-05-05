@@ -5,7 +5,6 @@ import { Readability } from '@mozilla/readability'
 
 export const dynamic = 'force-dynamic'
 
-// Strip anything dangerous before sending HTML to the client
 function sanitize(html: string): string {
   return html
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
@@ -25,47 +24,57 @@ export async function GET(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // Fetch with timeout
+  let res: Response
   try {
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 10_000)
-
-    const res = await fetch(url, {
+    const timeout = setTimeout(() => controller.abort(), 12_000)
+    res = await fetch(url, {
       signal: controller.signal,
+      redirect: 'follow',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; feedwise-reader/1.0)',
-        'Accept': 'text/html,application/xhtml+xml',
-        'Accept-Language': 'es,en;q=0.9',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
       },
     }).finally(() => clearTimeout(timeout))
-
-    if (!res.ok) {
-      return Response.json({ error: `Fetch failed: ${res.status}` }, { status: 502 })
-    }
-
-    const contentType = res.headers.get('content-type') ?? ''
-    if (!contentType.includes('html')) {
-      return Response.json({ error: 'Not an HTML page' }, { status: 422 })
-    }
-
-    const html = await res.text()
-    const dom = new JSDOM(html, { url })
-    const reader = new Readability(dom.window.document)
-    const article = reader.parse()
-
-    if (!article) {
-      return Response.json({ error: 'Could not extract content' }, { status: 422 })
-    }
-
-    return Response.json({
-      title: article.title,
-      byline: article.byline,
-      siteName: article.siteName,
-      excerpt: article.excerpt,
-      content: sanitize(article.content ?? ''),
-      textLength: article.textContent?.length ?? 0,
-    })
   } catch (e) {
-    const msg = e instanceof Error ? e.message : 'Unknown error'
+    const msg = e instanceof Error ? e.message : 'Fetch error'
     return Response.json({ error: msg }, { status: 502 })
   }
+
+  if (!res.ok) {
+    return Response.json({ error: `HTTP ${res.status}` }, { status: 502 })
+  }
+
+  const contentType = res.headers.get('content-type') ?? ''
+  if (!contentType.includes('html')) {
+    return Response.json({ error: 'Not an HTML page' }, { status: 422 })
+  }
+
+  // Use the final URL after redirects (res.url) so jsdom resolves relative links correctly
+  const finalUrl = res.url || url
+  const html = await res.text()
+
+  // Parse with Readability
+  let article: ReturnType<Readability['parse']> = null
+  try {
+    const dom = new JSDOM(html, { url: finalUrl })
+    article = new Readability(dom.window.document).parse()
+  } catch (e) {
+    // jsdom can throw on malformed HTML or invalid CSS — treat as unextractable
+    return Response.json({ error: `Parse error: ${e instanceof Error ? e.message : 'unknown'}` }, { status: 422 })
+  }
+
+  if (!article) {
+    return Response.json({ error: 'Could not extract content' }, { status: 422 })
+  }
+
+  return Response.json({
+    title: article.title,
+    byline: article.byline,
+    siteName: article.siteName,
+    content: sanitize(article.content ?? ''),
+    textLength: article.textContent?.length ?? 0,
+  })
 }
