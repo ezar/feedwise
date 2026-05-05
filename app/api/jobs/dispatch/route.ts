@@ -21,14 +21,12 @@ export async function POST(req: NextRequest) {
 
   if (!feeds?.length) return Response.json({ ok: true, dispatched: 0 })
 
-  let dispatched = 0
-  for (let i = 0; i < feeds.length; i++) {
-    try {
-      // Stagger 3s between feeds to avoid bursting the AI API
-      await publishFeedJob(feeds[i].id as string, i * 3)
-      dispatched++
-    } catch { /* continue with other feeds */ }
-  }
+  // Publish all messages in parallel — delay param handles staggering on QStash side
+  // Sequential was timing out on Vercel Hobby (10s limit) with 100+ feeds
+  const results = await Promise.allSettled(
+    feeds.map((feed, i) => publishFeedJob(feed.id as string, i * 3))
+  )
+  const dispatched = results.filter((r) => r.status === 'fulfilled').length
 
   return Response.json({ ok: true, dispatched, total: feeds.length })
 }
