@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { publishFeedJob } from '@/lib/qstash/scheduler'
+import { detectFeedUrl } from '@/lib/rss/detect'
 
 export async function GET() {
   const supabase = createClient()
@@ -27,9 +28,18 @@ export async function POST(req: Request) {
     feed_type?: string
     topic_query?: string
   }
-  const { url, title, feed_type = 'manual', topic_query } = body
+  const { title, feed_type = 'manual', topic_query } = body
+  let { url } = body
 
   if (!url) return Response.json({ error: 'url required' }, { status: 400 })
+
+  // Auto-detect RSS URL if user pasted a website URL instead of a feed URL
+  try {
+    url = await detectFeedUrl(url)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    return Response.json({ error: msg }, { status: 422 })
+  }
 
   const { data: feed, error } = await supabase
     .from('feeds')
@@ -39,7 +49,6 @@ export async function POST(req: Request) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
 
-  // Trigger an immediate fetch via message (master schedule handles hourly runs)
   publishFeedJob(feed.id as string).catch((err) =>
     console.error('Failed to publish feed job:', err)
   )

@@ -11,6 +11,7 @@ const SHORTCUTS = [
   { key: 'j', desc: 'Artículo siguiente' },
   { key: 'k', desc: 'Artículo anterior' },
   { key: 'o', desc: 'Abrir enlace original' },
+  { key: 'r', desc: 'Abrir modo lector' },
   { key: 's', desc: 'Guardar / desguardar' },
   { key: 'm', desc: 'Marcar como leído' },
   { key: '?', desc: 'Mostrar esta ayuda' },

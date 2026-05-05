@@ -78,6 +78,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [dateFilter, setDateFilter] = useState<DateFilter>('all')
   const [focusedIdx, setFocusedIdx] = useState(-1)
+  const [readerOpenId, setReaderOpenId] = useState<string | null>(null)
   const focusedIdxRef = useRef(-1)
   const searchAbortRef = useRef<AbortController | null>(null)
 
@@ -427,6 +428,13 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
           }
           break
         }
+        case 'r': {
+          if (idx >= 0 && list[idx]) {
+            e.preventDefault()
+            setReaderOpenId(list[idx].id)
+          }
+          break
+        }
       }
     }
     window.addEventListener('keydown', onKey)
@@ -638,7 +646,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
                           {t('collapse')}
                         </button>
                         <div className="p-2">
-                          <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+                          <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} openReader={readerOpenId === main.id} onReaderClose={() => setReaderOpenId(null)} />
                         </div>
                       </div>
                     ) : (
@@ -698,7 +706,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
                     onSwipeLeft={() => { handleSaveToggle(main.id, !main.is_saved); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_saved: !main.is_saved }) }) }}
                     onSwipeRight={() => { handleMarkRead(main.id); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_read: true }) }) }}
                   >
-                    <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+                    <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} openReader={readerOpenId === main.id} onReaderClose={() => setReaderOpenId(null)} />
                   </SwipeableArticle>
                 </div>
                 {dupes.length > 0 && !expandedGroups.has(main.id) && (

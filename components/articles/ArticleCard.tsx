@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button'
 import { ShareButton } from './ShareButton'
 import { ReaderModal } from './ReaderModal'
 import { useToast } from '@/components/providers/ToastProvider'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { cn } from '@/lib/utils'
+import { timeAgo } from '@/lib/timeAgo'
 
 interface Article {
   id: string
@@ -29,6 +30,8 @@ interface ArticleCardProps {
   article: Article
   onSaveToggle?: (id: string, saved: boolean) => void
   onMarkRead?: (id: string) => void
+  openReader?: boolean
+  onReaderClose?: () => void
 }
 
 function scoreColor(score: number) {
@@ -43,11 +46,13 @@ function scoreBarColor(score: number) {
   return 'bg-red-400'
 }
 
-export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardProps) {
+export function ArticleCard({ article, onSaveToggle, onMarkRead, openReader: externalOpen, onReaderClose }: ArticleCardProps) {
   const [saved, setSaved] = useState(article.is_saved)
-  const [readerOpen, setReaderOpen] = useState(false)
+  const [internalReaderOpen, setInternalReaderOpen] = useState(false)
+  const readerOpen = internalReaderOpen || !!externalOpen
   const { toast } = useToast()
   const t = useTranslations('article')
+  const locale = useLocale()
 
   const handleSave = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -80,9 +85,7 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
     }
   }
 
-  const pubDate = article.published_at
-    ? new Date(article.published_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-    : null
+  const pubDate = timeAgo(article.published_at, locale)
 
   const rawDescription = article.description
     ? article.description.replace(/<[^>]*>/g, '').trim()
@@ -116,7 +119,7 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              onClick={(e) => { e.preventDefault(); setReaderOpen(true) }}
+              onClick={(e) => { e.preventDefault(); setInternalReaderOpen(true) }}
               title={t('reader')}
             >
               <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -193,7 +196,7 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
         title={article.title}
         articleId={article.id}
         fallbackSummary={article.ai_summary ?? article.description}
-        onClose={() => setReaderOpen(false)}
+        onClose={() => { setInternalReaderOpen(false); onReaderClose?.() }}
       />
     )}
   </>
