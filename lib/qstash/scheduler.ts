@@ -17,15 +17,20 @@ export async function createDispatchSchedule(): Promise<string> {
   return schedule.scheduleId
 }
 
-// Publish a one-time message to fetch a single feed (cheap, not a schedule)
-export async function publishFeedJob(feedId: string, delaySec = 0): Promise<void> {
+// Publish a batch of feeds as a single QStash message (reduces daily message count)
+export async function publishFeedsBatch(feedIds: string[], delaySec = 0): Promise<void> {
   const appUrl = getAppUrl()
   await qstash.publishJSON({
     url: `${appUrl}/api/jobs/fetch-feeds`,
-    body: { feedId },
+    body: { feedIds },
     retries: 3,
     ...(delaySec > 0 ? { delay: delaySec } : {}),
   })
+}
+
+// Legacy single-feed publish — kept for manual per-feed triggers
+export async function publishFeedJob(feedId: string, delaySec = 0): Promise<void> {
+  return publishFeedsBatch([feedId], delaySec)
 }
 
 // Check if a dispatch schedule already exists

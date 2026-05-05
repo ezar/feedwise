@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { publishFeedJob } from '@/lib/qstash/scheduler'
+import { publishFeedsBatch } from '@/lib/qstash/scheduler'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
+
+const BATCH_SIZE = 5
 
 // Supabase-auth version of dispatch — no QStash signature required.
 // Used by the diagnostics panel "Force sync" button to verify the pipeline works
@@ -18,8 +20,14 @@ export async function POST() {
 
   if (!feeds?.length) return Response.json({ ok: true, dispatched: 0, total: 0 })
 
+  const feedIds = feeds.map((f) => f.id as string)
+  const batches: string[][] = []
+  for (let i = 0; i < feedIds.length; i += BATCH_SIZE) {
+    batches.push(feedIds.slice(i, i + BATCH_SIZE))
+  }
+
   const results = await Promise.allSettled(
-    feeds.map((feed, i) => publishFeedJob(feed.id as string, i * 2))
+    batches.map((batch, i) => publishFeedsBatch(batch, i * 5))
   )
 
   const dispatched = results.filter((r) => r.status === 'fulfilled').length
@@ -30,5 +38,5 @@ export async function POST() {
       : String((r as PromiseRejectedResult).reason)
     )
 
-  return Response.json({ ok: dispatched > 0, dispatched, total: feeds.length, errors })
+  return Response.json({ ok: dispatched > 0, dispatched: dispatched * BATCH_SIZE, total: feeds.length, errors })
 }
