@@ -1,8 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { Bookmark, BookmarkCheck, ChevronDown } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { ExternalLink, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Article {
@@ -29,23 +27,7 @@ function scoreBadgeClass(score: number) {
   return 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400'
 }
 
-export function ArticleRow({ article, onSaveToggle, onMarkRead, onExpand }: ArticleRowProps) {
-  const [saved, setSaved] = useState(article.is_saved)
-  const t = useTranslations('article')
-
-  const handleSave = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    const next = !saved
-    setSaved(next)
-    onSaveToggle?.(article.id, next)
-    fetch(`/api/articles/${article.id}`, {
-      credentials: 'include',
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ is_saved: next }),
-    })
-  }
-
+export function ArticleRow({ article, onMarkRead, onExpand }: ArticleRowProps) {
   const handleLinkClick = () => {
     if (!article.is_read) {
       onMarkRead?.(article.id)
@@ -96,16 +78,16 @@ export function ArticleRow({ article, onSaveToggle, onMarkRead, onExpand }: Arti
         {article.feeds?.title && (
           <span className="hidden sm:inline truncate max-w-[120px]">{article.feeds.title}</span>
         )}
-        <button
-          onClick={handleSave}
+        <a
+          href={article.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={handleLinkClick}
           className="opacity-0 group-hover:opacity-100 transition-opacity"
-          title={saved ? t('unsave') : t('save')}
+          title="Abrir artículo"
         >
-          {saved
-            ? <BookmarkCheck className="h-3.5 w-3.5 text-primary" />
-            : <Bookmark className="h-3.5 w-3.5 text-muted-foreground" />
-          }
-        </button>
+          <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+        </a>
         {onExpand && (
           <ChevronDown className="h-3.5 w-3.5 opacity-40 group-hover:opacity-70 transition-opacity" />
         )}
