@@ -46,7 +46,13 @@
     "dedupOff": "Deduplication off — click to enable",
     "dupeHidden": "{count} similar hidden",
     "dupesCollapsed": "+ {count} similar articles",
-    "collapse": "Collapse"
+    "collapse": "Collapse",
+    "search": "Search articles…",
+    "searchClear": "Clear",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "thisWeek": "This week",
+    "older": "Older"
   },
   "article": {
     "save": "Save article",

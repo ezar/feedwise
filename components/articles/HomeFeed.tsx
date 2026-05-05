@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Newspaper, CheckCheck, ArrowDown, LayoutList, LayoutGrid, Copy, ChevronUp } from 'lucide-react'
+import { Loader2, Newspaper, CheckCheck, ArrowDown, LayoutList, LayoutGrid, Copy, ChevronUp, Search, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { ArticleCard } from './ArticleCard'
 import { ArticleRow } from './ArticleRow'
@@ -10,6 +10,20 @@ import { groupDuplicates } from '@/lib/dedup'
 import { cn } from '@/lib/utils'
 
 type ViewMode = 'card' | 'compact'
+type DateBucket = 'today' | 'yesterday' | 'thisWeek' | 'older'
+
+function getDateBucket(dateStr: string | null | undefined): DateBucket {
+  if (!dateStr) return 'older'
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const articleDay = new Date(dateStr)
+  articleDay.setHours(0, 0, 0, 0)
+  const diffDays = Math.round((today.getTime() - articleDay.getTime()) / 86_400_000)
+  if (diffDays === 0) return 'today'
+  if (diffDays === 1) return 'yesterday'
+  if (diffDays <= 7) return 'thisWeek'
+  return 'older'
+}
 
 interface Article {
   id: string
@@ -52,6 +66,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
   })
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
+  const [search, setSearch] = useState('')
 
   const toggleCard = (id: string) =>
     setExpandedCards((prev) => {
@@ -222,12 +237,30 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
     ? articles.filter((a) => unreadSnapshot.has(a.id))
     : articles
 
-  const groups = useMemo(
-    () => dedupEnabled ? groupDuplicates(visible) : visible.map((a) => ({ main: a, dupes: [] })),
-    [visible, dedupEnabled]
-  )
+  const groups = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    const filtered = q
+      ? visible.filter((a) =>
+          a.title.toLowerCase().includes(q) ||
+          (a.feeds?.title ?? '').toLowerCase().includes(q)
+        )
+      : visible
+    return dedupEnabled ? groupDuplicates(filtered) : filtered.map((a) => ({ main: a, dupes: [] as Article[] }))
+  }, [visible, dedupEnabled, search])
 
   const dedupedCount = visible.length - groups.filter((g) => g.dupes.length > 0).reduce((acc, g) => acc + g.dupes.length, 0)
+
+  const DATE_BUCKET_ORDER: DateBucket[] = ['today', 'yesterday', 'thisWeek', 'older']
+  const dateGrouped = useMemo(() => {
+    const map = new Map<DateBucket, typeof groups>()
+    for (const group of groups) {
+      const bucket = getDateBucket(group.main.published_at)
+      if (!map.has(bucket)) map.set(bucket, [])
+      map.get(bucket)!.push(group)
+    }
+    return DATE_BUCKET_ORDER.filter((b) => map.has(b)).map((b) => ({ bucket: b, groups: map.get(b)! }))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groups])
 
   // Pull indicator: show above the feed when user is pulling down
   const showPullIndicator = pullDist > 8 || refreshing
@@ -260,6 +293,26 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
           <span>{refreshing ? t('refreshing') : pullReady ? t('pullToRefresh') : t('pulling')}</span>
         </div>
       )}
+
+      {/* Search bar */}
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('search')}
+          className="w-full pl-8 pr-8 py-1.5 text-sm bg-muted/50 border rounded-md outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/60"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
 
       {/* Filter bar */}
       <div className="flex items-center justify-between gap-2">
@@ -334,77 +387,89 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
         </div>
       </div>
 
-      {/* Article list */}
-      {viewMode === 'compact' && (
-        <div className="border rounded-lg overflow-hidden divide-y">
-          {groups.map(({ main, dupes }) => (
-            <div key={main.id}>
-              <div ref={(el) => attachReadRef(el, main.id)}>
-                {expandedCards.has(main.id) ? (
-                  <div>
-                    <button
-                      onClick={() => toggleCard(main.id)}
-                      className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-muted-foreground hover:text-foreground bg-muted/40 transition-colors border-b"
-                    >
-                      <ChevronUp className="h-3 w-3" />
-                      {t('collapse')}
-                    </button>
-                    <div className="p-2">
-                      <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
-                    </div>
-                  </div>
-                ) : (
-                  <ArticleRow article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => toggleCard(main.id)} />
-                )}
-              </div>
-              {dupes.length > 0 && !expandedGroups.has(main.id) && (
-                <button
-                  onClick={() => setExpandedGroups((prev) => new Set(Array.from(prev).concat(main.id)))}
-                  className="w-full text-left px-3 py-1 text-[11px] text-muted-foreground/70 hover:text-muted-foreground bg-muted/30 transition-colors"
-                >
-                  {t('dupesCollapsed', { count: dupes.length })}
-                </button>
-              )}
-              {dupes.length > 0 && expandedGroups.has(main.id) && dupes.map((dupe) => (
-                <div key={dupe.id} ref={(el) => attachReadRef(el, dupe.id)} className="opacity-60">
-                  {expandedCards.has(dupe.id) ? (
+      {/* Article list grouped by date */}
+      {viewMode === 'compact' && dateGrouped.map(({ bucket, groups: bucketGroups }) => (
+        <div key={bucket}>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide px-1 pb-1 pt-2 first:pt-0">
+            {t(bucket)}
+          </p>
+          <div className="border rounded-lg overflow-hidden divide-y">
+            {bucketGroups.map(({ main, dupes }) => (
+              <div key={main.id}>
+                <div ref={(el) => attachReadRef(el, main.id)}>
+                  {expandedCards.has(main.id) ? (
                     <div>
                       <button
-                        onClick={() => toggleCard(dupe.id)}
+                        onClick={() => toggleCard(main.id)}
                         className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-muted-foreground hover:text-foreground bg-muted/40 transition-colors border-b"
                       >
                         <ChevronUp className="h-3 w-3" />
                         {t('collapse')}
                       </button>
                       <div className="p-2">
-                        <ArticleCard article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+                        <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
                       </div>
                     </div>
                   ) : (
-                    <ArticleRow article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => toggleCard(dupe.id)} />
+                    <ArticleRow article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => toggleCard(main.id)} />
                   )}
                 </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-      {viewMode === 'card' && groups.map(({ main, dupes }) => (
-        <div key={main.id}>
-          <div ref={(el) => attachReadRef(el, main.id)}>
-            <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+                {dupes.length > 0 && !expandedGroups.has(main.id) && (
+                  <button
+                    onClick={() => setExpandedGroups((prev) => new Set(Array.from(prev).concat(main.id)))}
+                    className="w-full text-left px-3 py-1 text-[11px] text-muted-foreground/70 hover:text-muted-foreground bg-muted/30 transition-colors"
+                  >
+                    {t('dupesCollapsed', { count: dupes.length })}
+                  </button>
+                )}
+                {dupes.length > 0 && expandedGroups.has(main.id) && dupes.map((dupe) => (
+                  <div key={dupe.id} ref={(el) => attachReadRef(el, dupe.id)} className="opacity-60">
+                    {expandedCards.has(dupe.id) ? (
+                      <div>
+                        <button
+                          onClick={() => toggleCard(dupe.id)}
+                          className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-muted-foreground hover:text-foreground bg-muted/40 transition-colors border-b"
+                        >
+                          <ChevronUp className="h-3 w-3" />
+                          {t('collapse')}
+                        </button>
+                        <div className="p-2">
+                          <ArticleCard article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+                        </div>
+                      </div>
+                    ) : (
+                      <ArticleRow article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => toggleCard(dupe.id)} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
-          {dupes.length > 0 && !expandedGroups.has(main.id) && (
-            <button
-              onClick={() => setExpandedGroups((prev) => new Set(Array.from(prev).concat(main.id)))}
-              className="ml-4 mb-2 text-[11px] text-muted-foreground/70 hover:text-muted-foreground transition-colors"
-            >
-              {t('dupesCollapsed', { count: dupes.length })}
-            </button>
-          )}
-          {dupes.length > 0 && expandedGroups.has(main.id) && dupes.map((dupe) => (
-            <div key={dupe.id} ref={(el) => attachReadRef(el, dupe.id)} className="opacity-60 scale-[0.98] origin-left">
-              <ArticleCard article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+        </div>
+      ))}
+      {viewMode === 'card' && dateGrouped.map(({ bucket, groups: bucketGroups }) => (
+        <div key={bucket}>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide px-1 pb-1 pt-2 first:pt-0">
+            {t(bucket)}
+          </p>
+          {bucketGroups.map(({ main, dupes }) => (
+            <div key={main.id}>
+              <div ref={(el) => attachReadRef(el, main.id)}>
+                <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+              </div>
+              {dupes.length > 0 && !expandedGroups.has(main.id) && (
+                <button
+                  onClick={() => setExpandedGroups((prev) => new Set(Array.from(prev).concat(main.id)))}
+                  className="ml-4 mb-2 text-[11px] text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+                >
+                  {t('dupesCollapsed', { count: dupes.length })}
+                </button>
+              )}
+              {dupes.length > 0 && expandedGroups.has(main.id) && dupes.map((dupe) => (
+                <div key={dupe.id} ref={(el) => attachReadRef(el, dupe.id)} className="opacity-60 scale-[0.98] origin-left">
+                  <ArticleCard article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+                </div>
+              ))}
             </div>
           ))}
         </div>

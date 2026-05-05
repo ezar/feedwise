@@ -46,7 +46,13 @@
     "dedupOff": "Deduplicación desactivada — pulsa para activar",
     "dupeHidden": "{count} similares ocultos",
     "dupesCollapsed": "+ {count} artículos similares",
-    "collapse": "Colapsar"
+    "collapse": "Colapsar",
+    "search": "Buscar artículos…",
+    "searchClear": "Borrar",
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "thisWeek": "Esta semana",
+    "older": "Más antiguos"
   },
   "article": {
     "save": "Guardar artículo",
