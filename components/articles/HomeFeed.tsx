@@ -60,8 +60,11 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
   const [articles, setArticles] = useState<Article[]>(initialArticles)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(initialArticles.length >= INITIAL_SIZE)
-  const [filter, setFilter] = useState<'all' | 'unread'>('all')
-  const [unreadSnapshot, setUnreadSnapshot] = useState<Set<string>>(new Set())
+  const [filter, setFilter] = useState<'all' | 'unread'>('unread')
+  const initialUnread = initialArticles.filter((a) => !a.is_read)
+  const [unreadSnapshot, setUnreadSnapshot] = useState<Set<string>>(
+    () => new Set(initialUnread.map((a) => a.id))
+  )
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window === 'undefined') return 'card'
     return (localStorage.getItem('feedwise-view') as ViewMode) ?? 'card'
@@ -129,7 +132,8 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
   const sentinelRef = useRef<HTMLDivElement>(null)
   const loadingMoreRef = useRef(false)
   const hasMoreRef = useRef(initialArticles.length >= INITIAL_SIZE)
-  const offsetRef = useRef(initialArticles.length)
+  // Default filter is unread, so initial offset for load-more is the count of unread we already have
+  const offsetRef = useRef(initialUnread.length)
   const articleEls = useRef<Map<string, HTMLDivElement>>(new Map())
 
   // Sync when server refreshes (router.refresh() causes new initialArticles prop)
@@ -259,7 +263,14 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
       if (!res.ok) { hasMoreRef.current = false; setHasMore(false); return }
       const data = await res.json() as { articles?: Article[]; hasMore?: boolean }
       const next = data.articles ?? []
-      setArticles((prev) => [...prev, ...next])
+      setArticles((prev) => {
+        const existingIds = new Set(prev.map((a) => a.id))
+        return [...prev, ...next.filter((a) => !existingIds.has(a.id))]
+      })
+      // Add newly fetched unread articles to the snapshot so they appear in the filtered view
+      if (filter === 'unread') {
+        setUnreadSnapshot((prev) => new Set(Array.from(prev).concat(next.map((a) => a.id))))
+      }
       offsetRef.current += next.length
       hasMoreRef.current = data.hasMore ?? false
       setHasMore(data.hasMore ?? false)
@@ -636,9 +647,10 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
               onClick={() => {
                 setFilter('all')
                 setUnreadSnapshot(new Set())
+                // Offset for "all" = total articles already loaded
                 offsetRef.current = articles.length
-                hasMoreRef.current = articles.length >= INITIAL_SIZE
-                setHasMore(articles.length >= INITIAL_SIZE)
+                hasMoreRef.current = true
+                setHasMore(true)
               }}
               className={cn(
                 'px-3 py-1 transition-colors',
@@ -649,10 +661,11 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
             </button>
             <button
               onClick={() => {
+                const unread = articles.filter((a) => !a.is_read)
                 setFilter('unread')
-                setUnreadSnapshot(new Set(articles.filter((a) => !a.is_read).map((a) => a.id)))
-                // Reset offset: unread filter fetches independently from DB
-                offsetRef.current = 0
+                setUnreadSnapshot(new Set(unread.map((a) => a.id)))
+                // Offset for "unread" = count of unread articles already loaded
+                offsetRef.current = unread.length
                 hasMoreRef.current = true
                 setHasMore(true)
               }}
