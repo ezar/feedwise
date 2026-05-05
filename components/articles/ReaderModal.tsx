@@ -20,8 +20,7 @@ interface ReaderModalProps {
 }
 
 function readingTime(chars: number) {
-  const words = Math.round(chars / 5)
-  const mins = Math.max(1, Math.round(words / 200))
+  const mins = Math.max(1, Math.round(chars / 5 / 200))
   return `~${mins} min`
 }
 
@@ -29,7 +28,7 @@ export function ReaderModal({ url, title, fallbackSummary, onClose }: ReaderModa
   const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading')
   const [content, setContent] = useState<ReaderContent | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
-  const overlayRef = useRef<HTMLDivElement>(null)
+  const backdropRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -49,32 +48,38 @@ export function ReaderModal({ url, title, fallbackSummary, onClose }: ReaderModa
     void fetchContent()
   }, [url])
 
-  // Close on Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    // Prevent body scroll
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prev
+    }
   }, [onClose])
 
-  // Prevent body scroll
-  useEffect(() => {
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
-  }, [])
+  const hostname = (() => { try { return new URL(url).hostname } catch { return '' } })()
 
   return (
+    // Backdrop
     <div
-      ref={overlayRef}
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
-      onClick={(e) => { if (e.target === overlayRef.current) onClose() }}
+      ref={backdropRef}
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={(e) => { if (e.target === backdropRef.current) onClose() }}
     >
-      <div className="bg-background w-full sm:max-w-2xl sm:rounded-xl shadow-2xl flex flex-col max-h-screen sm:max-h-[90vh]">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-3 px-4 py-3 border-b shrink-0">
+      {/* Modal box — fixed size so internal scroll works */}
+      <div
+        className="bg-background rounded-xl shadow-2xl flex flex-col w-full max-w-2xl"
+        style={{ height: 'min(90vh, 800px)' }}
+      >
+        {/* Header — never scrolls */}
+        <div className="flex items-center justify-between gap-3 px-4 py-3 border-b shrink-0 rounded-t-xl">
           <div className="flex items-center gap-2 min-w-0">
             <BookOpen className="h-4 w-4 text-muted-foreground shrink-0" />
-            <span className="text-sm font-medium truncate text-muted-foreground">
-              {content?.siteName ?? new URL(url).hostname}
+            <span className="text-sm font-medium text-muted-foreground truncate">
+              {content?.siteName ?? hostname}
             </span>
             {content && content.textLength > 0 && (
               <span className="text-xs text-muted-foreground/60 shrink-0">
@@ -88,7 +93,7 @@ export function ReaderModal({ url, title, fallbackSummary, onClose }: ReaderModa
               target="_blank"
               rel="noopener noreferrer"
               className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              title="Open original"
+              title="Abrir original"
             >
               <ExternalLink className="h-4 w-4" />
             </a>
@@ -101,10 +106,10 @@ export function ReaderModal({ url, title, fallbackSummary, onClose }: ReaderModa
           </div>
         </div>
 
-        {/* Content */}
-        <div className="overflow-y-auto flex-1 px-6 py-6 sm:px-8">
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-6 sm:px-8">
           {state === 'loading' && (
-            <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
+            <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
               <Loader2 className="h-6 w-6 animate-spin" />
               <p className="text-sm">Cargando artículo…</p>
             </div>
@@ -115,21 +120,21 @@ export function ReaderModal({ url, title, fallbackSummary, onClose }: ReaderModa
               <div className="flex items-start gap-2 text-muted-foreground bg-muted/50 rounded-lg p-4">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium">No se pudo cargar el contenido</p>
+                  <p className="text-sm font-medium">No se pudo cargar el contenido completo</p>
                   <p className="text-xs mt-0.5 opacity-70">{errorMsg}</p>
                 </div>
               </div>
               {fallbackSummary && (
                 <div>
                   <h2 className="font-semibold text-lg leading-snug mb-3">{title}</h2>
-                  <p className="text-sm text-muted-foreground leading-relaxed italic">{fallbackSummary}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{fallbackSummary}</p>
                 </div>
               )}
               <a
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+                className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline mt-2"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
                 Abrir artículo original
@@ -139,10 +144,10 @@ export function ReaderModal({ url, title, fallbackSummary, onClose }: ReaderModa
 
           {state === 'ok' && content && (
             <article>
-              <h1 className="font-bold text-xl sm:text-2xl leading-snug mb-3">
+              <h1 className="font-bold text-xl sm:text-2xl leading-snug mb-2">
                 {content.title || title}
               </h1>
-              {(content.byline) && (
+              {content.byline && (
                 <p className="text-sm text-muted-foreground mb-5">{content.byline}</p>
               )}
               <div
@@ -150,10 +155,11 @@ export function ReaderModal({ url, title, fallbackSummary, onClose }: ReaderModa
                   'prose prose-sm dark:prose-invert max-w-none',
                   'prose-headings:font-semibold prose-headings:leading-snug',
                   'prose-a:text-primary prose-a:no-underline hover:prose-a:underline',
-                  'prose-img:rounded-lg prose-img:max-w-full',
+                  'prose-img:rounded-lg prose-img:max-w-full prose-img:h-auto',
                   'prose-blockquote:border-l-primary prose-blockquote:text-muted-foreground',
-                  'prose-code:text-xs prose-code:bg-muted prose-code:px-1 prose-code:rounded',
+                  'prose-code:text-xs prose-code:bg-muted prose-code:px-1 prose-code:rounded prose-code:before:content-none prose-code:after:content-none',
                   'prose-pre:bg-muted prose-pre:text-xs',
+                  'prose-figure:my-4',
                 )}
                 dangerouslySetInnerHTML={{ __html: content.content }}
               />
