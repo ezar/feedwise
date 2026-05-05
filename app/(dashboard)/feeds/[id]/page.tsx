@@ -28,10 +28,10 @@ export default async function FeedDetailPage({
 
   const { data: articles } = await supabase
     .from('articles')
-    .select('*, feeds(title)')
+    .select('id,title,url,description,published_at,relevance_score,ai_summary,is_read,is_saved,tags,note,feed_id,feeds(title)')
     .eq('feed_id', params.id)
     .order('published_at', { ascending: false })
-    .limit(40)
+    .limit(100)
 
   const total = articles?.length ?? 0
   const pending = articles?.filter((a) => !a.ai_processed).length ?? 0
