@@ -191,6 +191,7 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
       <ReaderModal
         url={article.url}
         title={article.title}
+        articleId={article.id}
         fallbackSummary={article.ai_summary ?? article.description}
         onClose={() => setReaderOpen(false)}
       />

@@ -54,7 +54,10 @@
     "today": "Hoy",
     "yesterday": "Ayer",
     "thisWeek": "Esta semana",
-    "older": "Más antiguos"
+    "older": "Más antiguos",
+    "dateAll": "Todo",
+    "dateToday": "Hoy",
+    "dateWeek": "Esta semana"
   },
   "article": {
     "reader": "Modo lector",
@@ -239,7 +242,10 @@
     "addNote": "Añadir nota…",
     "notePlaceholder": "Tu nota…",
     "noteSaving": "Guardando…",
-    "noteSaved": "Guardado automáticamente"
+    "noteSaved": "Guardado automáticamente",
+    "loadMore": "Cargar más",
+    "loadingMore": "Cargando…",
+    "allLoaded": "{count} artículos guardados"
   },
   "language": {
     "es": "Español",
@@ -254,6 +260,9 @@
     "articles": "artículos",
     "last7days": "Últimos 7 días",
     "topSources": "Fuentes favoritas"
+  },
+  "trending": {
+    "title": "Tendencias esta semana"
   },
   "push": {
     "enable": "Activar notificaciones",

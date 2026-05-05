@@ -9,10 +9,12 @@ import { ArticleRow } from './ArticleRow'
 import { SwipeableArticle } from './SwipeableArticle'
 import { ShortcutsModal } from './ShortcutsModal'
 import { groupDuplicates } from '@/lib/dedup'
+import { TrendingTopics } from './TrendingTopics'
 import { cn } from '@/lib/utils'
 
 type ViewMode = 'card' | 'compact'
 type DateBucket = 'today' | 'yesterday' | 'thisWeek' | 'older'
+type DateFilter = 'all' | 'today' | 'week'
 
 function getDateBucket(dateStr: string | null | undefined): DateBucket {
   if (!dateStr) return 'older'
@@ -74,6 +76,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
   const [searching, setSearching] = useState(false)
   const [activeTag, setActiveTag] = useState<string | null>(null)
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all')
   const [focusedIdx, setFocusedIdx] = useState(-1)
   const focusedIdxRef = useRef(-1)
   const searchAbortRef = useRef<AbortController | null>(null)
@@ -305,9 +308,17 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
   }, [])
 
   const unreadCount = articles.filter((a) => !a.is_read).length
-  const visible = filter === 'unread'
-    ? articles.filter((a) => unreadSnapshot.has(a.id))
-    : articles
+  const visible = useMemo(() => {
+    let result = filter === 'unread'
+      ? articles.filter((a) => unreadSnapshot.has(a.id))
+      : articles
+    if (dateFilter === 'today') {
+      result = result.filter((a) => getDateBucket(a.published_at) === 'today')
+    } else if (dateFilter === 'week') {
+      result = result.filter((a) => getDateBucket(a.published_at) !== 'older')
+    }
+    return result
+  }, [articles, filter, unreadSnapshot, dateFilter])
 
   const activeArticles = useMemo(() => {
     let result = searchResults ?? visible
@@ -484,6 +495,14 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
         </p>
       )}
 
+      {/* Trending topics — only shown on main feed, no search/folder active */}
+      {!feedId && !search && (
+        <TrendingTopics
+          onTagClick={(tag) => setActiveTag(activeTag === tag ? null : tag)}
+          activeTag={activeTag}
+        />
+      )}
+
       {/* Tag filter chips */}
       {availableTags.length > 0 && (
         <div className="flex gap-1.5 flex-wrap -mt-1">
@@ -505,6 +524,24 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
       )}
 
       {showShortcuts && <ShortcutsModal onClose={() => setShowShortcuts(false)} />}
+
+      {/* Date filter chips */}
+      <div className="flex gap-1.5">
+        {(['all', 'today', 'week'] as DateFilter[]).map((f) => (
+          <button
+            key={f}
+            onClick={() => setDateFilter(f)}
+            className={cn(
+              'text-xs px-2.5 py-1 rounded-full border transition-colors',
+              dateFilter === f
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
+            )}
+          >
+            {t(f === 'all' ? 'dateAll' : f === 'today' ? 'dateToday' : 'dateWeek')}
+          </button>
+        ))}
+      </div>
 
       {/* Filter bar */}
       <div className="flex items-center justify-between gap-2">

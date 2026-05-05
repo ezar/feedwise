@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { ArticleList } from '@/components/articles/ArticleList'
+import { SavedFeed } from '@/components/saved/SavedFeed'
 import { ExportButton } from '@/components/saved/ExportButton'
 import { getTranslations } from 'next-intl/server'
 
@@ -14,9 +14,8 @@ export default async function SavedPage() {
     .select('id, title, url, description, published_at, relevance_score, ai_summary, is_read, is_saved, tags, note, feeds(title)')
     .eq('is_saved', true)
     .order('published_at', { ascending: false })
-    .limit(100)
+    .limit(40)
 
-  // Supabase returns feeds as array; normalise to single object for ArticleList
   type Row = NonNullable<typeof raw>[number]
   const articles = (raw ?? []).map((a: Row) => ({
     ...a,
@@ -29,12 +28,7 @@ export default async function SavedPage() {
         <h2 className="text-xl font-semibold">{t('title')}</h2>
         <ExportButton articles={articles} />
       </div>
-      <ArticleList
-        initialArticles={articles}
-        emptyMessage={t('empty')}
-        emptyHint={t('emptyHint')}
-        showNotes
-      />
+      <SavedFeed initialArticles={articles} />
     </div>
   )
 }
