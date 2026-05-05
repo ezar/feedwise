@@ -138,17 +138,14 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
 
   // Sync when server refreshes (router.refresh() causes new initialArticles prop)
   useEffect(() => {
+    const newUnread = initialArticles.filter((a) => !a.is_read)
     setArticles(initialArticles)
     setRefreshing(false)
-    offsetRef.current = initialArticles.length
+    // Always refresh snapshot so new articles after a feed update appear immediately
+    setUnreadSnapshot(new Set(newUnread.map((a) => a.id)))
+    offsetRef.current = newUnread.length
     hasMoreRef.current = initialArticles.length >= INITIAL_SIZE
     setHasMore(initialArticles.length >= INITIAL_SIZE)
-    // If unread filter is active, refresh the snapshot with the new article set
-    setUnreadSnapshot((prev) =>
-      prev.size > 0
-        ? new Set(initialArticles.filter((a) => !a.is_read).map((a) => a.id))
-        : prev
-    )
   }, [initialArticles])
 
   // Auto-refresh: if tab was hidden for 5+ min, refresh on focus
