@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { X, ExternalLink, Loader2, BookOpen, AlertCircle, Highlighter, Trash2 } from 'lucide-react'
+import { X, ExternalLink, Loader2, BookOpen, AlertCircle, Highlighter, Trash2, Bookmark, BookmarkCheck, Share2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface ReaderContent {
@@ -18,6 +18,8 @@ interface ReaderModalProps {
   title: string
   articleId: string
   fallbackSummary?: string | null
+  isSaved?: boolean
+  onSaveToggle?: (id: string, saved: boolean) => void
   onClose: () => void
 }
 
@@ -38,7 +40,7 @@ const FONT_PROSE: Record<FontSize, string> = {
   sm: 'prose-sm', base: 'prose-base', lg: 'prose-lg', xl: 'prose-xl',
 }
 
-export function ReaderModal({ url, title, articleId, fallbackSummary, onClose }: ReaderModalProps) {
+export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = false, onSaveToggle, onClose }: ReaderModalProps) {
   const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading')
   const [content, setContent] = useState<ReaderContent | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
@@ -48,6 +50,8 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, onClose }:
   const [highlights, setHighlights] = useState<Highlight[]>([])
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null)
   const [showHighlights, setShowHighlights] = useState(false)
+  const [saved, setSaved] = useState(isSaved)
+  const [shareMsg, setShareMsg] = useState('')
   const backdropRef = useRef<HTMLDivElement>(null)
   const articleRef = useRef<HTMLDivElement>(null)
 
@@ -78,7 +82,6 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, onClose }:
     void fetchContent()
   }, [url])
 
-  // Load existing highlights
   useEffect(() => {
     fetch(`/api/articles/${articleId}/highlights`, { credentials: 'include' })
       .then((r) => r.json())
@@ -86,7 +89,6 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, onClose }:
       .catch(() => {})
   }, [articleId])
 
-  // Show tooltip on text selection inside the article
   const handleMouseUp = useCallback(() => {
     const selection = window.getSelection()
     const text = selection?.toString().trim()
@@ -94,7 +96,6 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, onClose }:
       setTooltip(null)
       return
     }
-    // Check selection is inside the article element
     const range = selection!.getRangeAt(0)
     if (!articleRef.current.contains(range.commonAncestorContainer)) {
       setTooltip(null)
@@ -136,6 +137,29 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, onClose }:
     })
   }, [articleId])
 
+  const handleSave = useCallback(() => {
+    const next = !saved
+    setSaved(next)
+    onSaveToggle?.(articleId, next)
+    fetch(`/api/articles/${articleId}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_saved: next }),
+    })
+  }, [saved, articleId, onSaveToggle])
+
+  const handleShare = useCallback(async () => {
+    const shareTitle = content?.title ?? title
+    if (navigator.share) {
+      await navigator.share({ title: shareTitle, url }).catch(() => {})
+    } else {
+      await navigator.clipboard.writeText(url).catch(() => {})
+      setShareMsg('¡Copiado!')
+      setTimeout(() => setShareMsg(''), 2000)
+    }
+  }, [content, title, url])
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -152,7 +176,6 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, onClose }:
     }
   }, [onClose, tooltip])
 
-  // Dismiss tooltip on click outside
   useEffect(() => {
     if (!tooltip) return
     const dismiss = () => setTooltip(null)
@@ -165,15 +188,15 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, onClose }:
   const modal = (
     <div
       ref={backdropRef}
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4"
       onClick={(e) => { if (e.target === backdropRef.current) onClose() }}
     >
       <div
-        className="bg-background rounded-xl shadow-2xl flex flex-col w-full max-w-2xl"
-        style={{ height: 'min(90vh, 800px)' }}
+        className="bg-background flex flex-col w-full max-w-2xl rounded-t-2xl sm:rounded-xl shadow-2xl"
+        style={{ height: 'min(92vh, 820px)' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 px-4 py-3 border-b shrink-0 rounded-t-xl">
+        <div className="flex items-center justify-between gap-3 px-4 py-3 border-b shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             <BookOpen className="h-4 w-4 text-muted-foreground shrink-0" />
             <span className="text-sm font-medium text-muted-foreground truncate">
@@ -207,23 +230,12 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, onClose }:
               onClick={() => changeFontSize(-1)}
               disabled={fontSize === 'sm'}
               className="px-1.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
-              title="Reducir texto"
             >A-</button>
             <button
               onClick={() => changeFontSize(1)}
               disabled={fontSize === 'xl'}
               className="px-1.5 py-1 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
-              title="Ampliar texto"
             >A+</button>
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              title="Abrir original"
-            >
-              <ExternalLink className="h-4 w-4" />
-            </a>
             <button
               onClick={onClose}
               className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -255,10 +267,8 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, onClose }:
           </div>
         )}
 
-        {/* Scrollable body — position:relative for tooltip */}
-        <div className="reader-scroll flex-1 overflow-y-auto overscroll-contain px-6 py-6 sm:px-8 relative" onMouseUp={handleMouseUp}>
-
-          {/* Selection tooltip */}
+        {/* Scrollable body */}
+        <div className="reader-scroll flex-1 overflow-y-auto overscroll-contain px-6 py-6 sm:px-8 relative min-h-0" onMouseUp={handleMouseUp}>
           {tooltip && (
             <div
               className="absolute z-10 -translate-x-1/2 -translate-y-full"
@@ -298,15 +308,6 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, onClose }:
                   <p className="text-sm text-muted-foreground leading-relaxed">{fallbackSummary}</p>
                 </div>
               )}
-              <a
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline mt-2"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-                Abrir artículo original
-              </a>
             </div>
           )}
 
@@ -333,6 +334,43 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, onClose }:
               />
             </article>
           )}
+        </div>
+
+        {/* Bottom bar */}
+        <div className="flex items-center justify-between gap-2 px-4 py-3 border-t shrink-0">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleSave}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
+                saved
+                  ? 'text-primary bg-primary/10 hover:bg-primary/20'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              )}
+            >
+              {saved
+                ? <BookmarkCheck className="h-4 w-4" />
+                : <Bookmark className="h-4 w-4" />
+              }
+              <span className="hidden sm:inline">{saved ? 'Guardado' : 'Guardar'}</span>
+            </button>
+            <button
+              onClick={() => void handleShare()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <Share2 className="h-4 w-4" />
+              <span className="hidden sm:inline">{shareMsg || 'Compartir'}</span>
+            </button>
+          </div>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <ExternalLink className="h-4 w-4" />
+            <span className="hidden sm:inline">Original</span>
+          </a>
         </div>
       </div>
     </div>

@@ -53,7 +53,13 @@ export async function GET(req: NextRequest) {
   }
 
   // Use the final URL after redirects (res.url) so jsdom resolves relative links correctly
-  const finalUrl = res.url || url
+  // Validate URL is parseable by JSDOM before passing it in
+  let finalUrl = url
+  try {
+    finalUrl = new URL(res.url || url).href
+  } catch {
+    // keep original url if redirect url is unparseable
+  }
   const html = await res.text()
 
   // Parse with Readability
@@ -62,8 +68,14 @@ export async function GET(req: NextRequest) {
     const dom = new JSDOM(html, { url: finalUrl })
     article = new Readability(dom.window.document).parse()
   } catch (e) {
-    // jsdom can throw on malformed HTML or invalid CSS — treat as unextractable
-    return Response.json({ error: `Parse error: ${e instanceof Error ? e.message : 'unknown'}` }, { status: 422 })
+    const msg = e instanceof Error ? e.message : 'unknown'
+    // Try again without a base URL if JSDOM rejected it
+    try {
+      const dom2 = new JSDOM(html)
+      article = new Readability(dom2.window.document).parse()
+    } catch {
+      return Response.json({ error: `Parse error: ${msg}` }, { status: 422 })
+    }
   }
 
   if (!article) {

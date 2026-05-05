@@ -49,7 +49,7 @@ interface HomeFeedProps {
   feedId?: string
 }
 
-const PAGE_SIZE = 40
+const PAGE_SIZE = 100
 const PULL_THRESHOLD = 72   // px to trigger refresh
 const STALE_MS = 5 * 60 * 1000 // auto-refresh after 5 min hidden
 

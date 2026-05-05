@@ -27,7 +27,7 @@ export default async function HomePage({ searchParams }: { searchParams: { folde
     .select('*, feeds(title)')
     .order('relevance_score', { ascending: false, nullsFirst: false })
     .order('published_at', { ascending: false })
-    .limit(40)
+    .limit(100)
 
   if (folder) {
     const { data: folderFeeds } = await supabase
