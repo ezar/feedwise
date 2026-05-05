@@ -12,6 +12,30 @@ const withPWA = withPWAInit({
   customWorkerSrc: 'worker',
   workboxOptions: {
     disableDevLogs: true,
+    runtimeCaching: [
+      {
+        // Articles API — NetworkFirst: sirve de red, cae a caché si offline
+        urlPattern: /^\/api\/articles(\?.*)?$/,
+        handler: 'NetworkFirst',
+        options: {
+          cacheName: 'api-articles',
+          networkTimeoutSeconds: 5,
+          expiration: { maxEntries: 10, maxAgeSeconds: 24 * 60 * 60 },
+          cacheableResponse: { statuses: [200] },
+        },
+      },
+      {
+        // Páginas del dashboard — NetworkFirst con fallback a caché
+        urlPattern: /^\/(briefing|saved|settings|feeds)?(\/.*)?$/,
+        handler: 'NetworkFirst',
+        options: {
+          cacheName: 'pages',
+          networkTimeoutSeconds: 5,
+          expiration: { maxEntries: 20, maxAgeSeconds: 24 * 60 * 60 },
+          cacheableResponse: { statuses: [200] },
+        },
+      },
+    ],
   },
 })
 
