@@ -17,6 +17,7 @@ interface Feed {
   feed_type: 'manual' | 'topic'
   topic_query?: string | null
   last_fetched_at?: string | null
+  folder?: string | null
 }
 
 interface TopicPreview {

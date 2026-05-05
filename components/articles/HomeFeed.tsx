@@ -6,6 +6,7 @@ import { Loader2, Newspaper, CheckCheck, ArrowDown, LayoutList, LayoutGrid, Copy
 import { useTranslations } from 'next-intl'
 import { ArticleCard } from './ArticleCard'
 import { ArticleRow } from './ArticleRow'
+import { SwipeableArticle } from './SwipeableArticle'
 import { groupDuplicates } from '@/lib/dedup'
 import { cn } from '@/lib/utils'
 
@@ -67,6 +68,8 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
   const [search, setSearch] = useState('')
+  const [focusedIdx, setFocusedIdx] = useState(-1)
+  const focusedIdxRef = useRef(-1)
 
   const toggleCard = (id: string) =>
     setExpandedCards((prev) => {
@@ -250,6 +253,9 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
 
   const dedupedCount = visible.length - groups.filter((g) => g.dupes.length > 0).reduce((acc, g) => acc + g.dupes.length, 0)
 
+  // Flat main articles for keyboard nav
+  const mainArticlesRef = useRef<Article[]>([])
+
   const DATE_BUCKET_ORDER: DateBucket[] = ['today', 'yesterday', 'thisWeek', 'older']
   const dateGrouped = useMemo(() => {
     const map = new Map<DateBucket, typeof groups>()
@@ -261,6 +267,78 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
     return DATE_BUCKET_ORDER.filter((b) => map.has(b)).map((b) => ({ bucket: b, groups: map.get(b)! }))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groups])
+
+  const flatIndexMap = useMemo(() => {
+    const map = new Map<string, number>()
+    let i = 0
+    for (const { groups: g } of dateGrouped) {
+      for (const { main } of g) map.set(main.id, i++)
+    }
+    return map
+  }, [dateGrouped])
+
+  // Keep flat article list + focused index refs in sync
+  useEffect(() => {
+    mainArticlesRef.current = dateGrouped.flatMap(({ groups: g }) => g.map(({ main }) => main))
+  }, [dateGrouped])
+  useEffect(() => { focusedIdxRef.current = focusedIdx }, [focusedIdx])
+
+  // Keyboard navigation
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      const list = mainArticlesRef.current
+      const idx = focusedIdxRef.current
+      switch (e.key) {
+        case 'j': {
+          e.preventDefault()
+          const next = Math.min(idx + 1, list.length - 1)
+          setFocusedIdx(next)
+          const el = articleEls.current.get(list[next]?.id ?? '')
+          el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+          break
+        }
+        case 'k': {
+          e.preventDefault()
+          const next = Math.max(idx - 1, 0)
+          setFocusedIdx(next)
+          const el = articleEls.current.get(list[next]?.id ?? '')
+          el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+          break
+        }
+        case 'o':
+          if (idx >= 0 && list[idx]) window.open(list[idx].url, '_blank', 'noopener,noreferrer')
+          break
+        case 's': {
+          if (idx >= 0 && list[idx]) {
+            const a = list[idx]
+            const next = !a.is_saved
+            handleSaveToggle(a.id, next)
+            fetch(`/api/articles/${a.id}`, {
+              method: 'PATCH', credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ is_saved: next }),
+            })
+          }
+          break
+        }
+        case 'm': {
+          if (idx >= 0 && list[idx]) {
+            const a = list[idx]
+            handleMarkRead(a.id)
+            fetch(`/api/articles/${a.id}`, {
+              method: 'PATCH', credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ is_read: true }),
+            })
+          }
+          break
+        }
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [handleSaveToggle, handleMarkRead])
 
   // Pull indicator: show above the feed when user is pulling down
   const showPullIndicator = pullDist > 8 || refreshing
@@ -394,56 +472,64 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
             {t(bucket)}
           </p>
           <div className="border rounded-lg overflow-hidden divide-y">
-            {bucketGroups.map(({ main, dupes }) => (
-              <div key={main.id}>
-                <div ref={(el) => attachReadRef(el, main.id)}>
-                  {expandedCards.has(main.id) ? (
-                    <div>
-                      <button
-                        onClick={() => toggleCard(main.id)}
-                        className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-muted-foreground hover:text-foreground bg-muted/40 transition-colors border-b"
-                      >
-                        <ChevronUp className="h-3 w-3" />
-                        {t('collapse')}
-                      </button>
-                      <div className="p-2">
-                        <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
-                      </div>
-                    </div>
-                  ) : (
-                    <ArticleRow article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => toggleCard(main.id)} />
-                  )}
-                </div>
-                {dupes.length > 0 && !expandedGroups.has(main.id) && (
-                  <button
-                    onClick={() => setExpandedGroups((prev) => new Set(Array.from(prev).concat(main.id)))}
-                    className="w-full text-left px-3 py-1 text-[11px] text-muted-foreground/70 hover:text-muted-foreground bg-muted/30 transition-colors"
-                  >
-                    {t('dupesCollapsed', { count: dupes.length })}
-                  </button>
-                )}
-                {dupes.length > 0 && expandedGroups.has(main.id) && dupes.map((dupe) => (
-                  <div key={dupe.id} ref={(el) => attachReadRef(el, dupe.id)} className="opacity-60">
-                    {expandedCards.has(dupe.id) ? (
+            {bucketGroups.map(({ main, dupes }) => {
+              const isFocused = flatIndexMap.get(main.id) === focusedIdx && focusedIdx >= 0
+              return (
+                <div key={main.id} className={isFocused ? 'ring-2 ring-inset ring-primary/40' : ''}>
+                  <div ref={(el) => attachReadRef(el, main.id)}>
+                    {expandedCards.has(main.id) ? (
                       <div>
                         <button
-                          onClick={() => toggleCard(dupe.id)}
+                          onClick={() => toggleCard(main.id)}
                           className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-muted-foreground hover:text-foreground bg-muted/40 transition-colors border-b"
                         >
                           <ChevronUp className="h-3 w-3" />
                           {t('collapse')}
                         </button>
                         <div className="p-2">
-                          <ArticleCard article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+                          <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
                         </div>
                       </div>
                     ) : (
-                      <ArticleRow article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => toggleCard(dupe.id)} />
+                      <SwipeableArticle
+                        onSwipeLeft={() => { handleSaveToggle(main.id, !main.is_saved); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_saved: !main.is_saved }) }) }}
+                        onSwipeRight={() => { handleMarkRead(main.id); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_read: true }) }) }}
+                      >
+                        <ArticleRow article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => toggleCard(main.id)} />
+                      </SwipeableArticle>
                     )}
                   </div>
-                ))}
-              </div>
-            ))}
+                  {dupes.length > 0 && !expandedGroups.has(main.id) && (
+                    <button
+                      onClick={() => setExpandedGroups((prev) => new Set(Array.from(prev).concat(main.id)))}
+                      className="w-full text-left px-3 py-1 text-[11px] text-muted-foreground/70 hover:text-muted-foreground bg-muted/30 transition-colors"
+                    >
+                      {t('dupesCollapsed', { count: dupes.length })}
+                    </button>
+                  )}
+                  {dupes.length > 0 && expandedGroups.has(main.id) && dupes.map((dupe) => (
+                    <div key={dupe.id} ref={(el) => attachReadRef(el, dupe.id)} className="opacity-60">
+                      {expandedCards.has(dupe.id) ? (
+                        <div>
+                          <button
+                            onClick={() => toggleCard(dupe.id)}
+                            className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-muted-foreground hover:text-foreground bg-muted/40 transition-colors border-b"
+                          >
+                            <ChevronUp className="h-3 w-3" />
+                            {t('collapse')}
+                          </button>
+                          <div className="p-2">
+                            <ArticleCard article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+                          </div>
+                        </div>
+                      ) : (
+                        <ArticleRow article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => toggleCard(dupe.id)} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )
+            })}
           </div>
         </div>
       ))}
@@ -452,26 +538,34 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
           <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide px-1 pb-1 pt-2 first:pt-0">
             {t(bucket)}
           </p>
-          {bucketGroups.map(({ main, dupes }) => (
-            <div key={main.id}>
-              <div ref={(el) => attachReadRef(el, main.id)}>
-                <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
-              </div>
-              {dupes.length > 0 && !expandedGroups.has(main.id) && (
-                <button
-                  onClick={() => setExpandedGroups((prev) => new Set(Array.from(prev).concat(main.id)))}
-                  className="ml-4 mb-2 text-[11px] text-muted-foreground/70 hover:text-muted-foreground transition-colors"
-                >
-                  {t('dupesCollapsed', { count: dupes.length })}
-                </button>
-              )}
-              {dupes.length > 0 && expandedGroups.has(main.id) && dupes.map((dupe) => (
-                <div key={dupe.id} ref={(el) => attachReadRef(el, dupe.id)} className="opacity-60 scale-[0.98] origin-left">
-                  <ArticleCard article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+          {bucketGroups.map(({ main, dupes }) => {
+            const isFocused = flatIndexMap.get(main.id) === focusedIdx && focusedIdx >= 0
+            return (
+              <div key={main.id} className={isFocused ? 'ring-2 ring-primary/40 rounded-xl mb-0.5' : ''}>
+                <div ref={(el) => attachReadRef(el, main.id)}>
+                  <SwipeableArticle
+                    onSwipeLeft={() => { handleSaveToggle(main.id, !main.is_saved); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_saved: !main.is_saved }) }) }}
+                    onSwipeRight={() => { handleMarkRead(main.id); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_read: true }) }) }}
+                  >
+                    <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+                  </SwipeableArticle>
                 </div>
-              ))}
-            </div>
-          ))}
+                {dupes.length > 0 && !expandedGroups.has(main.id) && (
+                  <button
+                    onClick={() => setExpandedGroups((prev) => new Set(Array.from(prev).concat(main.id)))}
+                    className="ml-4 mb-2 text-[11px] text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+                  >
+                    {t('dupesCollapsed', { count: dupes.length })}
+                  </button>
+                )}
+                {dupes.length > 0 && expandedGroups.has(main.id) && dupes.map((dupe) => (
+                  <div key={dupe.id} ref={(el) => attachReadRef(el, dupe.id)} className="opacity-60 scale-[0.98] origin-left">
+                    <ArticleCard article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+                  </div>
+                ))}
+              </div>
+            )
+          })}
         </div>
       ))}
 

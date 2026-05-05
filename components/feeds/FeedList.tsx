@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Trash2, Rss, Clock, Sparkles, ChevronRight, AlertCircle } from 'lucide-react'
+import { Trash2, Rss, Clock, Sparkles, ChevronRight, AlertCircle, FolderPlus, X } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -17,11 +17,67 @@ interface Feed {
   topic_query?: string | null
   last_fetched_at?: string | null
   last_error?: string | null
+  folder?: string | null
 }
 
 interface FeedListProps {
   feeds: Feed[]
   onDeleted: (id: string) => void
+}
+
+function FolderEditor({ feedId, initial }: { feedId: string; initial: string | null | undefined }) {
+  const [editing, setEditing] = useState(false)
+  const [folder, setFolder] = useState(initial ?? '')
+  const [saving, setSaving] = useState(false)
+
+  const save = async (value: string) => {
+    setSaving(true)
+    await fetch(`/api/feeds/${feedId}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ folder: value || null }),
+    })
+    setSaving(false)
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <form
+        className="flex items-center gap-1"
+        onSubmit={(e) => { e.preventDefault(); void save(folder) }}
+      >
+        <input
+          autoFocus
+          value={folder}
+          onChange={(e) => setFolder(e.target.value)}
+          placeholder="Carpeta…"
+          className="text-xs border rounded px-1.5 py-0.5 w-28 outline-none focus:ring-1 focus:ring-ring"
+          onKeyDown={(e) => { if (e.key === 'Escape') setEditing(false) }}
+        />
+        <button type="submit" disabled={saving} className="text-xs text-primary hover:underline">OK</button>
+        <button type="button" onClick={() => setEditing(false)}><X className="h-3 w-3 text-muted-foreground" /></button>
+      </form>
+    )
+  }
+
+  return folder ? (
+    <button
+      onClick={() => setEditing(true)}
+      className="text-[10px] px-1.5 py-0.5 rounded border border-dashed text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+    >
+      {folder}
+    </button>
+  ) : (
+    <button
+      onClick={() => setEditing(true)}
+      title="Asignar carpeta"
+      className="text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+    >
+      <FolderPlus className="h-3.5 w-3.5" />
+    </button>
+  )
 }
 
 export function FeedList({ feeds, onDeleted }: FeedListProps) {
@@ -101,6 +157,9 @@ export function FeedList({ feeds, onDeleted }: FeedListProps) {
               )}
             </div>
           </Link>
+          <div onClick={(e) => e.preventDefault()}>
+            <FolderEditor feedId={feed.id} initial={feed.folder} />
+          </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
           <Button
             variant="ghost"
