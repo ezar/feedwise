@@ -130,14 +130,14 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
   const sentinelRef = useRef<HTMLDivElement>(null)
   const loadingMoreRef = useRef(false)
   const hasMoreRef = useRef(initialArticles.length >= INITIAL_SIZE)
-  const pageRef = useRef(1)
+  const offsetRef = useRef(initialArticles.length)
   const articleEls = useRef<Map<string, HTMLDivElement>>(new Map())
 
   // Sync when server refreshes (router.refresh() causes new initialArticles prop)
   useEffect(() => {
     setArticles(initialArticles)
     setRefreshing(false)
-    pageRef.current = 1
+    offsetRef.current = initialArticles.length
     hasMoreRef.current = initialArticles.length >= INITIAL_SIZE
     setHasMore(initialArticles.length >= INITIAL_SIZE)
     // If unread filter is active, refresh the snapshot with the new article set
@@ -238,17 +238,15 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
     loadingMoreRef.current = true
     setLoadingMore(true)
     try {
-      const nextPage = pageRef.current + 1
       const feedParam = feedId ? `&feed_id=${feedId}` : ''
-      const res = await fetch(`/api/articles?page=${nextPage}${feedParam}`, { credentials: 'include' })
+      const res = await fetch(`/api/articles?offset=${offsetRef.current}${feedParam}`, { credentials: 'include' })
       if (!res.ok) { hasMoreRef.current = false; setHasMore(false); return }
-      const data = await res.json() as { articles?: Article[] }
+      const data = await res.json() as { articles?: Article[]; hasMore?: boolean }
       const next = data.articles ?? []
       setArticles((prev) => [...prev, ...next])
-      pageRef.current = nextPage
-      const more = next.length === PAGE_SIZE
-      hasMoreRef.current = more
-      setHasMore(more)
+      offsetRef.current += next.length
+      hasMoreRef.current = data.hasMore ?? false
+      setHasMore(data.hasMore ?? false)
     } catch {
       hasMoreRef.current = false
       setHasMore(false)

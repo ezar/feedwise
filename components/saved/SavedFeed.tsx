@@ -82,8 +82,8 @@ const PAGE_SIZE = 100
 export function SavedFeed({ initialArticles }: { initialArticles: Article[] }) {
   const t = useTranslations('saved')
   const [articles, setArticles] = useState(initialArticles)
-  const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(initialArticles.length === PAGE_SIZE)
+  const [offset, setOffset] = useState(initialArticles.length)
+  const [hasMore, setHasMore] = useState(initialArticles.length >= PAGE_SIZE)
   const [loading, setLoading] = useState(false)
 
   const handleSaveToggle = useCallback((id: string, saved: boolean) => {
@@ -102,14 +102,13 @@ export function SavedFeed({ initialArticles }: { initialArticles: Article[] }) {
   const loadMore = async () => {
     setLoading(true)
     try {
-      const next = page + 1
-      const res = await fetch(`/api/articles?saved=true&page=${next}`, { credentials: 'include' })
+      const res = await fetch(`/api/articles?saved=true&offset=${offset}`, { credentials: 'include' })
       if (!res.ok) { setHasMore(false); return }
-      const data = await res.json() as { articles?: Article[] }
+      const data = await res.json() as { articles?: Article[]; hasMore?: boolean }
       const more = data.articles ?? []
       setArticles((prev) => [...prev, ...more])
-      setPage(next)
-      setHasMore(more.length === PAGE_SIZE)
+      setOffset((o) => o + more.length)
+      setHasMore(data.hasMore ?? false)
     } finally {
       setLoading(false)
     }
