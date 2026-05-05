@@ -567,15 +567,17 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
 
       {/* Filter bar */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <p className="text-xs text-muted-foreground shrink-0">
-          {unreadCount > 0 ? t('unread', { count: unreadCount }) : t('allRead')}
-          {' · '}{t('loaded', { count: dedupEnabled ? dedupedCount : visible.length })}
+        <div className="flex flex-col shrink-0">
+          <p className="text-xs text-muted-foreground">
+            {unreadCount > 0 ? t('unread', { count: unreadCount }) : t('allRead')}
+            {' · '}{t('loaded', { count: dedupEnabled ? dedupedCount : visible.length })}
+          </p>
           {dedupEnabled && visible.length > dedupedCount && (
-            <span className="ml-1 text-muted-foreground/60">
+            <span className="text-xs text-muted-foreground/60">
               ({t('dupeHidden', { count: visible.length - dedupedCount })})
             </span>
           )}
-        </p>
+        </div>
         <div className="flex items-center gap-2">
           {unreadCount > 0 && (
             <button
