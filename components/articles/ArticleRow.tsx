@@ -100,7 +100,6 @@ export function ArticleRow({ article, onSaveToggle, onMarkRead, onExpand }: Arti
         {article.feeds?.title && (
           <span className="hidden sm:inline truncate max-w-[120px]">{article.feeds.title}</span>
         )}
-        {pubDate && <span>{pubDate}</span>}
         <button
           onClick={handleSave}
           className="opacity-0 group-hover:opacity-100 transition-opacity"
