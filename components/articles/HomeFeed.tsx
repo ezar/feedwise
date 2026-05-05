@@ -130,6 +130,12 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
     pageRef.current = 1
     hasMoreRef.current = initialArticles.length === PAGE_SIZE
     setHasMore(initialArticles.length === PAGE_SIZE)
+    // If unread filter is active, refresh the snapshot with the new article set
+    setUnreadSnapshot((prev) =>
+      prev.size > 0
+        ? new Set(initialArticles.filter((a) => !a.is_read).map((a) => a.id))
+        : prev
+    )
   }, [initialArticles])
 
   // Auto-refresh: if tab was hidden for 5+ min, refresh on focus
