@@ -30,6 +30,7 @@ Title: ${article.title}${description ? `\nContent: ${description}` : ''}`,
 export interface ScoredArticle {
   score: number
   summary: string
+  tags: string[]
 }
 
 export async function scoreArticle(
@@ -59,9 +60,10 @@ Description: ${description}
 Score 0-100 the relevance of this article for the user.
 0 = completely irrelevant. 100 = exactly what they want.
 ${summaryInstruction}
+Also assign 1-2 short topic tags in ${lang} (e.g. IA, Finanzas, Política, Salud, Tecnología, Startups, Ciencia, Seguridad, Clima, Cultura).
 
 Reply ONLY with valid JSON, no markdown:
-{"score": number, "summary": "string in ${lang}"}`,
+{"score": number, "summary": "string in ${lang}", "tags": ["tag1"]}`,
       },
     ],
   })
@@ -74,9 +76,10 @@ Reply ONLY with valid JSON, no markdown:
     return {
       score: Math.min(100, Math.max(0, Number(parsed.score ?? 0))),
       summary: parsed.summary ?? '',
+      tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 2).map(String) : [],
     }
   } catch {
     console.error('Error parsing scorer response:', text)
-    return { score: 0, summary: '' }
+    return { score: 0, summary: '', tags: [] }
   }
 }

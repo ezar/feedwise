@@ -43,10 +43,10 @@ export async function POST() {
     await Promise.all(
       batch.map(async (article) => {
         try {
-          const { score, summary } = await scoreArticle(article, interests, locale)
+          const { score, summary, tags } = await scoreArticle(article, interests, locale)
           await supabase
             .from('articles')
-            .update({ relevance_score: score, ai_summary: summary, ai_processed: true })
+            .update({ relevance_score: score, ai_summary: summary, tags, ai_processed: true })
             .eq('id', article.id)
           scored++
         } catch {

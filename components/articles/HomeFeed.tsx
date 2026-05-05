@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 import { ArticleCard } from './ArticleCard'
 import { ArticleRow } from './ArticleRow'
 import { SwipeableArticle } from './SwipeableArticle'
+import { ShortcutsModal } from './ShortcutsModal'
 import { groupDuplicates } from '@/lib/dedup'
 import { cn } from '@/lib/utils'
 
@@ -36,6 +37,7 @@ interface Article {
   ai_summary?: string | null
   is_read: boolean
   is_saved: boolean
+  tags?: string[] | null
   feeds?: { title?: string | null } | null
 }
 
@@ -70,6 +72,8 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
   const [search, setSearch] = useState('')
   const [searchResults, setSearchResults] = useState<Article[] | null>(null)
   const [searching, setSearching] = useState(false)
+  const [activeTag, setActiveTag] = useState<string | null>(null)
+  const [showShortcuts, setShowShortcuts] = useState(false)
   const [focusedIdx, setFocusedIdx] = useState(-1)
   const focusedIdxRef = useRef(-1)
   const searchAbortRef = useRef<AbortController | null>(null)
@@ -279,7 +283,19 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
     ? articles.filter((a) => unreadSnapshot.has(a.id))
     : articles
 
-  const activeArticles = searchResults ?? visible
+  const activeArticles = useMemo(() => {
+    let result = searchResults ?? visible
+    if (activeTag) result = result.filter((a) => a.tags?.includes(activeTag))
+    return result
+  }, [searchResults, visible, activeTag])
+
+  const availableTags = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const a of visible) {
+      for (const tag of (a.tags ?? [])) counts.set(tag, (counts.get(tag) ?? 0) + 1)
+    }
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([tag]) => tag)
+  }, [visible])
 
   const groups = useMemo(
     () => dedupEnabled
@@ -327,6 +343,9 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
       const list = mainArticlesRef.current
       const idx = focusedIdxRef.current
       switch (e.key) {
+        case '?':
+          setShowShortcuts(true)
+          break
         case 'j': {
           e.preventDefault()
           const next = Math.min(idx + 1, list.length - 1)
@@ -438,6 +457,28 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
             : t('searchResultCount', { count: searchResults.length })}
         </p>
       )}
+
+      {/* Tag filter chips */}
+      {availableTags.length > 0 && (
+        <div className="flex gap-1.5 flex-wrap -mt-1">
+          {availableTags.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+              className={cn(
+                'text-[11px] px-2 py-0.5 rounded-full border transition-colors',
+                activeTag === tag
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
+              )}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {showShortcuts && <ShortcutsModal onClose={() => setShowShortcuts(false)} />}
 
       {/* Filter bar */}
       <div className="flex items-center justify-between gap-2">

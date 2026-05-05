@@ -21,6 +21,7 @@ interface Article {
   ai_summary?: string | null
   is_read: boolean
   is_saved: boolean
+  tags?: string[] | null
   feeds?: { title?: string | null } | null
 }
 
@@ -167,13 +168,18 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
           </div>
         )}
 
-        {/* Meta */}
+        {/* Meta + tags */}
         <div className="flex items-center gap-2 flex-wrap">
           {article.feeds?.title && (
             <Badge variant="secondary" className="text-xs font-normal">
               {article.feeds.title}
             </Badge>
           )}
+          {article.tags?.map((tag) => (
+            <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+              {tag}
+            </span>
+          ))}
           {pubDate && (
             <span className="text-xs text-muted-foreground ml-auto">{pubDate}</span>
           )}

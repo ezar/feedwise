@@ -25,11 +25,29 @@ function readingTime(chars: number) {
   return `~${mins} min`
 }
 
+type FontSize = 'sm' | 'base' | 'lg' | 'xl'
+const FONT_SIZES: FontSize[] = ['sm', 'base', 'lg', 'xl']
+const FONT_PROSE: Record<FontSize, string> = {
+  sm: 'prose-sm', base: 'prose-base', lg: 'prose-lg', xl: 'prose-xl',
+}
+
 export function ReaderModal({ url, title, fallbackSummary, onClose }: ReaderModalProps) {
   const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading')
   const [content, setContent] = useState<ReaderContent | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
+  const [fontSize, setFontSize] = useState<FontSize>(() =>
+    (typeof window !== 'undefined' ? (localStorage.getItem('feedwise-reader-font') as FontSize | null) : null) ?? 'base'
+  )
   const backdropRef = useRef<HTMLDivElement>(null)
+
+  const changeFontSize = (dir: 1 | -1) => {
+    setFontSize((prev) => {
+      const idx = Math.max(0, Math.min(FONT_SIZES.length - 1, FONT_SIZES.indexOf(prev) + dir))
+      const next = FONT_SIZES[idx]
+      localStorage.setItem('feedwise-reader-font', next)
+      return next
+    })
+  }
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -89,6 +107,18 @@ export function ReaderModal({ url, title, fallbackSummary, onClose }: ReaderModa
             )}
           </div>
           <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => changeFontSize(-1)}
+              disabled={fontSize === 'sm'}
+              className="px-1.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+              title="Reducir texto"
+            >A-</button>
+            <button
+              onClick={() => changeFontSize(1)}
+              disabled={fontSize === 'xl'}
+              className="px-1.5 py-1 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+              title="Ampliar texto"
+            >A+</button>
             <a
               href={url}
               target="_blank"
@@ -153,7 +183,7 @@ export function ReaderModal({ url, title, fallbackSummary, onClose }: ReaderModa
               )}
               <div
                 className={cn(
-                  'prose prose-sm dark:prose-invert max-w-none',
+                  'prose dark:prose-invert max-w-none', FONT_PROSE[fontSize],
                   'prose-headings:font-semibold prose-headings:leading-snug',
                   'prose-a:text-primary prose-a:no-underline hover:prose-a:underline',
                   'prose-img:rounded-lg prose-img:max-w-full prose-img:h-auto',

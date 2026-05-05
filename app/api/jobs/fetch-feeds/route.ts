@@ -87,10 +87,10 @@ export async function POST(req: NextRequest) {
           await supabase.from('articles').update({ ai_processed: true }).eq('id', article.id)
           return
         }
-        const { score, summary } = await scoreArticle(article, interests, locale)
+        const { score, summary, tags } = await scoreArticle(article, interests, locale)
         await supabase
           .from('articles')
-          .update({ relevance_score: score, ai_summary: summary, ai_processed: true })
+          .update({ relevance_score: score, ai_summary: summary, tags, ai_processed: true })
           .eq('id', article.id)
         processed++
         if (score >= threshold) highScoreArticles.push({ title: article.title, url: article.url ?? '' })
