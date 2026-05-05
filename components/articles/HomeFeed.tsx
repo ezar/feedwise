@@ -68,8 +68,11 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
   const [search, setSearch] = useState('')
+  const [searchResults, setSearchResults] = useState<Article[] | null>(null)
+  const [searching, setSearching] = useState(false)
   const [focusedIdx, setFocusedIdx] = useState(-1)
   const focusedIdxRef = useRef(-1)
+  const searchAbortRef = useRef<AbortController | null>(null)
 
   const toggleCard = (id: string) =>
     setExpandedCards((prev) => {
@@ -77,6 +80,36 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
       if (next.has(id)) { next.delete(id) } else { next.add(id) }
       return next
     })
+
+  // Debounced DB search
+  useEffect(() => {
+    const q = search.trim()
+    if (q.length < 2) {
+      setSearchResults(null)
+      setSearching(false)
+      return
+    }
+    setSearching(true)
+    const timer = setTimeout(async () => {
+      searchAbortRef.current?.abort()
+      const controller = new AbortController()
+      searchAbortRef.current = controller
+      try {
+        const res = await fetch(`/api/articles/search?q=${encodeURIComponent(q)}`, {
+          credentials: 'include',
+          signal: controller.signal,
+        })
+        if (!res.ok) throw new Error()
+        const data = await res.json() as { articles?: Article[] }
+        setSearchResults(data.articles ?? [])
+      } catch (e) {
+        if ((e as Error).name !== 'AbortError') setSearchResults([])
+      } finally {
+        setSearching(false)
+      }
+    }, 350)
+    return () => clearTimeout(timer)
+  }, [search])
 
   // Pull-to-refresh state
   const [pullDist, setPullDist] = useState(0)
@@ -240,16 +273,14 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
     ? articles.filter((a) => unreadSnapshot.has(a.id))
     : articles
 
-  const groups = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    const filtered = q
-      ? visible.filter((a) =>
-          a.title.toLowerCase().includes(q) ||
-          (a.feeds?.title ?? '').toLowerCase().includes(q)
-        )
-      : visible
-    return dedupEnabled ? groupDuplicates(filtered) : filtered.map((a) => ({ main: a, dupes: [] as Article[] }))
-  }, [visible, dedupEnabled, search])
+  const activeArticles = searchResults ?? visible
+
+  const groups = useMemo(
+    () => dedupEnabled
+      ? groupDuplicates(activeArticles)
+      : activeArticles.map((a) => ({ main: a, dupes: [] as Article[] })),
+    [activeArticles, dedupEnabled]
+  )
 
   const dedupedCount = visible.length - groups.filter((g) => g.dupes.length > 0).reduce((acc, g) => acc + g.dupes.length, 0)
 
@@ -374,7 +405,10 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
 
       {/* Search bar */}
       <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+        {searching
+          ? <Loader2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground animate-spin pointer-events-none" />
+          : <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+        }
         <input
           type="search"
           value={search}
@@ -384,13 +418,20 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
         />
         {search && (
           <button
-            onClick={() => setSearch('')}
+            onClick={() => { setSearch(''); setSearchResults(null) }}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
             <X className="h-3.5 w-3.5" />
           </button>
         )}
       </div>
+      {searchResults !== null && !searching && (
+        <p className="text-xs text-muted-foreground -mt-1 px-0.5">
+          {searchResults.length === 0
+            ? t('searchNoResults')
+            : t('searchResultCount', { count: searchResults.length })}
+        </p>
+      )}
 
       {/* Filter bar */}
       <div className="flex items-center justify-between gap-2">

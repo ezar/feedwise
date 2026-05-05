@@ -49,6 +49,8 @@
     "collapse": "Collapse",
     "search": "Search articles…",
     "searchClear": "Clear",
+    "searchResultCount": "{count} results",
+    "searchNoResults": "No results found",
     "today": "Today",
     "yesterday": "Yesterday",
     "thisWeek": "This week",
