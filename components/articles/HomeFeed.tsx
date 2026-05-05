@@ -252,16 +252,42 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
     }
   }, [feedId])
 
+  // Mark all articles still tracked in articleEls (visible, not yet scrolled past) as read
+  const markAllVisibleRead = useCallback(() => {
+    if (!articleEls.current.size) return
+    const ids = Array.from(articleEls.current.keys())
+    ids.forEach((id) => articleEls.current.delete(id))
+    setArticles((prev) =>
+      prev.map((a) => (ids.includes(a.id) && !a.is_read ? { ...a, is_read: true } : a))
+    )
+    ids.forEach((id) =>
+      fetch(`/api/articles/${id}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_read: true }),
+      })
+    )
+  }, [])
+
   useEffect(() => {
     const sentinel = sentinelRef.current
     if (!sentinel) return
     const observer = new IntersectionObserver(
-      (entries) => { if (entries[0].isIntersecting) void loadMore() },
+      (entries) => {
+        if (!entries[0].isIntersecting) return
+        if (hasMoreRef.current) {
+          void loadMore()
+        } else {
+          // End of list — user scrolled past everything, mark remaining visible articles read
+          markAllVisibleRead()
+        }
+      },
       { rootMargin: '200px' }
     )
     observer.observe(sentinel)
     return () => observer.disconnect()
-  }, [loadMore])
+  }, [loadMore, markAllVisibleRead])
 
   // Mark all as read
   const handleMarkAllRead = useCallback(async () => {
