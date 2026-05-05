@@ -57,6 +57,7 @@
     "older": "Más antiguos"
   },
   "article": {
+    "reader": "Modo lector",
     "save": "Guardar artículo",
     "unsave": "Quitar de guardados",
     "saveError": "Error al guardar",

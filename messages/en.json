@@ -57,6 +57,7 @@
     "older": "Older"
   },
   "article": {
+    "reader": "Reader mode",
     "save": "Save article",
     "unsave": "Remove from saved",
     "saveError": "Error saving",

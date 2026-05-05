@@ -1,11 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { Bookmark, BookmarkCheck, ExternalLink, Sparkles } from 'lucide-react'
+import { Bookmark, BookmarkCheck, ExternalLink, Sparkles, BookOpen } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ShareButton } from './ShareButton'
+import { ReaderModal } from './ReaderModal'
 import { useToast } from '@/components/providers/ToastProvider'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
@@ -43,6 +44,7 @@ function scoreBarColor(score: number) {
 
 export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardProps) {
   const [saved, setSaved] = useState(article.is_saved)
+  const [readerOpen, setReaderOpen] = useState(false)
   const { toast } = useToast()
   const t = useTranslations('article')
 
@@ -93,6 +95,7 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
   const score = article.relevance_score
 
   return (
+    <>
     <Card className={cn('transition-all duration-200 hover:shadow-md', article.is_read && 'opacity-60')}>
       <CardContent className="p-4 flex flex-col gap-2.5">
         {/* Title row */}
@@ -108,6 +111,15 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
             <ExternalLink className="inline ml-1 h-3 w-3 opacity-0 group-hover:opacity-40 transition-opacity" />
           </a>
           <div className="flex items-center shrink-0 mt-0.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={(e) => { e.preventDefault(); setReaderOpen(true) }}
+              title={t('reader')}
+            >
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
+            </Button>
             <ShareButton articleId={article.id} title={article.title} url={article.url} summary={article.ai_summary} />
             <Button
               variant="ghost"
@@ -168,5 +180,15 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
         </div>
       </CardContent>
     </Card>
+
+    {readerOpen && (
+      <ReaderModal
+        url={article.url}
+        title={article.title}
+        fallbackSummary={article.ai_summary ?? article.description}
+        onClose={() => setReaderOpen(false)}
+      />
+    )}
+  </>
   )
 }
