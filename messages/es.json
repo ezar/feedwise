@@ -235,7 +235,11 @@
   "saved": {
     "title": "Artículos guardados",
     "empty": "No tienes artículos guardados",
-    "emptyHint": "Toca el icono de marcador en cualquier artículo para guardarlo aquí."
+    "emptyHint": "Toca el icono de marcador en cualquier artículo para guardarlo aquí.",
+    "addNote": "Añadir nota…",
+    "notePlaceholder": "Tu nota…",
+    "noteSaving": "Guardando…",
+    "noteSaved": "Guardado automáticamente"
   },
   "language": {
     "es": "Español",

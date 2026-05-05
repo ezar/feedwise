@@ -235,7 +235,11 @@
   "saved": {
     "title": "Saved articles",
     "empty": "No saved articles",
-    "emptyHint": "Tap the bookmark icon on any article to save it here."
+    "emptyHint": "Tap the bookmark icon on any article to save it here.",
+    "addNote": "Add note…",
+    "notePlaceholder": "Your note…",
+    "noteSaving": "Saving…",
+    "noteSaved": "Saved automatically"
   },
   "language": {
     "es": "Español",

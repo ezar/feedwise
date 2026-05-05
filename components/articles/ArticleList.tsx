@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { Newspaper, StickyNote } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { ArticleCard } from './ArticleCard'
 
 interface Article {
@@ -27,6 +28,7 @@ interface ArticleListProps {
 }
 
 function NoteEditor({ articleId, initialNote }: { articleId: string; initialNote?: string | null }) {
+  const t = useTranslations('saved')
   const [open, setOpen] = useState(!!initialNote)
   const [note, setNote] = useState(initialNote ?? '')
   const [saving, setSaving] = useState(false)
@@ -58,7 +60,7 @@ function NoteEditor({ articleId, initialNote }: { articleId: string; initialNote
         className="flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors px-4 pb-2 -mt-1"
       >
         <StickyNote className="h-3 w-3" />
-        Añadir nota…
+        {t('addNote')}
       </button>
     )
   }
@@ -68,13 +70,13 @@ function NoteEditor({ articleId, initialNote }: { articleId: string; initialNote
       <textarea
         value={note}
         onChange={(e) => handleChange(e.target.value)}
-        placeholder="Tu nota…"
+        placeholder={t('notePlaceholder')}
         rows={2}
         className="w-full text-xs text-muted-foreground bg-muted/40 border rounded-md px-2.5 py-1.5 resize-none outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/40"
         autoFocus={!initialNote}
       />
       <p className="text-[10px] text-muted-foreground/40 mt-0.5">
-        {saving ? 'Guardando…' : 'Guardado automáticamente'}
+        {saving ? t('noteSaving') : t('noteSaved')}
       </p>
     </div>
   )
@@ -82,10 +84,11 @@ function NoteEditor({ articleId, initialNote }: { articleId: string; initialNote
 
 export function ArticleList({
   initialArticles,
-  emptyMessage = 'No hay artículos todavía',
-  emptyHint = 'Añade feeds y configura tus intereses para ver artículos relevantes.',
+  emptyMessage,
+  emptyHint,
   showNotes = false,
 }: ArticleListProps) {
+  const t = useTranslations('saved')
   const [articles, setArticles] = useState(initialArticles)
 
   useEffect(() => { setArticles(initialArticles) }, [initialArticles])
@@ -98,14 +101,17 @@ export function ArticleList({
     setArticles((prev) => prev.map((a) => (a.id === id ? { ...a, is_read: true } : a)))
   }, [])
 
+  const resolvedEmptyMessage = emptyMessage ?? t('empty')
+  const resolvedEmptyHint = emptyHint ?? t('emptyHint')
+
   if (articles.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
         <div className="rounded-full bg-muted p-4">
           <Newspaper className="h-8 w-8 text-muted-foreground" />
         </div>
-        <p className="font-medium text-foreground">{emptyMessage}</p>
-        <p className="text-sm text-muted-foreground max-w-xs">{emptyHint}</p>
+        <p className="font-medium text-foreground">{resolvedEmptyMessage}</p>
+        <p className="text-sm text-muted-foreground max-w-xs">{resolvedEmptyHint}</p>
       </div>
     )
   }
