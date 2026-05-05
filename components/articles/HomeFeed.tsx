@@ -162,7 +162,22 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
     return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [router])
 
-  // Mark-as-read: scroll event checks which articles passed above viewport
+  // Mark-as-read: accumulate IDs scrolled past and flush in a single batch request
+  const readQueueRef = useRef<Set<string>>(new Set())
+  const readFlushTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const flushReadQueue = useCallback(() => {
+    const ids = Array.from(readQueueRef.current)
+    if (!ids.length) return
+    readQueueRef.current = new Set()
+    fetch('/api/articles/mark-read', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    })
+  }, [])
+
   useEffect(() => {
     let rafId: number | null = null
     const check = () => {
@@ -173,12 +188,10 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
           setArticles((prev) =>
             prev.map((a) => (a.id === id && !a.is_read ? { ...a, is_read: true } : a))
           )
-          fetch(`/api/articles/${id}`, {
-            method: 'PATCH',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ is_read: true }),
-          })
+          readQueueRef.current.add(id)
+          // Debounce: flush 1s after last article scrolled past
+          if (readFlushTimer.current) clearTimeout(readFlushTimer.current)
+          readFlushTimer.current = setTimeout(flushReadQueue, 1000)
         }
       })
     }
@@ -190,8 +203,11 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
     return () => {
       window.removeEventListener('scroll', onScroll)
       if (rafId !== null) cancelAnimationFrame(rafId)
+      // Flush any pending on unmount
+      if (readFlushTimer.current) clearTimeout(readFlushTimer.current)
+      flushReadQueue()
     }
-  }, [])
+  }, [flushReadQueue])
 
   const attachReadRef = useCallback((el: HTMLDivElement | null, id: string) => {
     if (el) articleEls.current.set(id, el)
