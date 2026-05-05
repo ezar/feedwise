@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { X, ExternalLink, Loader2, BookOpen, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -62,7 +63,7 @@ export function ReaderModal({ url, title, fallbackSummary, onClose }: ReaderModa
 
   const hostname = (() => { try { return new URL(url).hostname } catch { return '' } })()
 
-  return (
+  const modal = (
     // Backdrop
     <div
       ref={backdropRef}
@@ -169,4 +170,6 @@ export function ReaderModal({ url, title, fallbackSummary, onClose }: ReaderModa
       </div>
     </div>
   )
+
+  return createPortal(modal, document.body)
 }
