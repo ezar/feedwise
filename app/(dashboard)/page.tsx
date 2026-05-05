@@ -22,30 +22,39 @@ export default async function HomePage({ searchParams }: { searchParams: { folde
   const hasInterests = !!(profile?.interests?.trim())
   const folder = searchParams.folder?.trim() || null
 
-  let query = supabase
-    .from('articles')
-    .select('*, feeds(title)')
-    .order('relevance_score', { ascending: false, nullsFirst: false })
-    .order('published_at', { ascending: false })
-    .limit(100)
-
+  let feedIds: string[] | null = null
   if (folder) {
     const { data: folderFeeds } = await supabase
       .from('feeds')
       .select('id')
       .eq('user_id', user!.id)
       .eq('folder', folder)
+    feedIds = (folderFeeds ?? []).map((f) => f.id as string)
+  }
 
-    const feedIds = (folderFeeds ?? []).map((f) => f.id as string)
+  let articlesQuery = supabase
+    .from('articles')
+    .select('id,title,url,description,published_at,relevance_score,ai_summary,is_read,is_saved,tags,note,feed_id,feeds(title)')
+    .order('relevance_score', { ascending: false, nullsFirst: false })
+    .order('published_at', { ascending: false })
+    .limit(100)
+
+  let countQuery = supabase
+    .from('articles')
+    .select('*', { count: 'exact', head: true })
+
+  if (feedIds !== null) {
     if (feedIds.length === 0) {
-      query = query.eq('id', '00000000-0000-0000-0000-000000000000') // returns nothing
+      articlesQuery = articlesQuery.eq('id', '00000000-0000-0000-0000-000000000000')
+      countQuery = countQuery.eq('id', '00000000-0000-0000-0000-000000000000')
     } else {
-      query = query.in('feed_id', feedIds)
+      articlesQuery = articlesQuery.in('feed_id', feedIds)
+      countQuery = countQuery.in('feed_id', feedIds)
     }
   }
 
-  const { data: articles } = await query
-  const count = articles?.length ?? 0
+  const [{ data: articles }, { count: totalCount }] = await Promise.all([articlesQuery, countQuery])
+  const count = totalCount ?? 0
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -79,7 +88,7 @@ export default async function HomePage({ searchParams }: { searchParams: { folde
 
       {!folder && <TopPicks />}
 
-      <HomeFeed initialArticles={articles ?? []} />
+      <HomeFeed initialArticles={(articles ?? []).map((a) => ({ ...a, feeds: Array.isArray(a.feeds) ? (a.feeds[0] ?? null) : a.feeds }))} />
     </div>
   )
 }
