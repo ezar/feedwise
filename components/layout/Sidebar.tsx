@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { Rss, Bookmark, Settings, LayoutDashboard, Sparkles, Folder } from 'lucide-react'
+import { Rss, Bookmark, Settings, LayoutDashboard, Sparkles, Folder, MessageSquare } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { useEffect, useState } from 'react'
@@ -25,6 +25,7 @@ export function Sidebar() {
   const navItems = [
     { href: '/', label: t('feed'), icon: LayoutDashboard },
     { href: '/briefing', label: t('briefing'), icon: Sparkles },
+    { href: '/chat', label: t('chat'), icon: MessageSquare },
     { href: '/feeds', label: t('feeds'), icon: Rss },
     { href: '/saved', label: t('saved'), icon: Bookmark },
     { href: '/settings', label: t('settings'), icon: Settings },

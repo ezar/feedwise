@@ -5,7 +5,8 @@
     "saved": "Saved",
     "settings": "Settings",
     "stats": "Stats",
-    "briefing": "Briefing"
+    "briefing": "Briefing",
+    "chat": "Chat"
   },
   "auth": {
     "signInTitle": "Sign in to your account",
@@ -263,6 +264,14 @@
   },
   "trending": {
     "title": "Trending this week"
+  },
+  "chat": {
+    "scopeAll": "All feeds",
+    "locale": "en",
+    "emptyTitle": "Chat with your articles",
+    "emptyHint": "Ask questions about your feeds from the last 14 days. You can focus on a specific feed or folder.",
+    "placeholder": "Ask something about your articles…",
+    "error": "Error getting response. Try again."
   },
   "push": {
     "enable": "Enable notifications",

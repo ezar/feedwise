@@ -5,7 +5,8 @@
     "saved": "Guardados",
     "settings": "Configuración",
     "stats": "Stats",
-    "briefing": "Briefing"
+    "briefing": "Briefing",
+    "chat": "Chat"
   },
   "auth": {
     "signInTitle": "Inicia sesión en tu cuenta",
@@ -263,6 +264,14 @@
   },
   "trending": {
     "title": "Tendencias esta semana"
+  },
+  "chat": {
+    "scopeAll": "Todos los feeds",
+    "locale": "es",
+    "emptyTitle": "Chat con tus artículos",
+    "emptyHint": "Haz preguntas sobre tus feeds de los últimos 14 días. Puedes enfocarte en un feed o carpeta concretos.",
+    "placeholder": "Pregunta algo sobre tus artículos…",
+    "error": "Error al obtener respuesta. Inténtalo de nuevo."
   },
   "push": {
     "enable": "Activar notificaciones",
