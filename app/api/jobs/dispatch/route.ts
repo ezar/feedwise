@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { publishFeedJob } from '@/lib/qstash/scheduler'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
   const receiver = new Receiver({

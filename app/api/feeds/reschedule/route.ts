@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { createDispatchSchedule, getDispatchScheduleId, removeSchedule } from '@/lib/qstash/scheduler'
+import { createDispatchSchedule, removeSchedule } from '@/lib/qstash/scheduler'
+import { qstash } from '@/lib/qstash/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,11 +10,15 @@ export async function POST() {
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    // Remove existing dispatch schedule if any
-    const existingId = await getDispatchScheduleId()
-    if (existingId) await removeSchedule(existingId)
+    // Delete ALL existing schedules that point to our dispatch endpoint — regardless of
+    // which URL they use. This clears stale schedules left behind by old Vercel deployments.
+    const allSchedules = await qstash.schedules.list()
+    const dispatchSchedules = allSchedules.filter((s) =>
+      typeof s.destination === 'string' && s.destination.includes('/api/jobs/dispatch')
+    )
+    await Promise.allSettled(dispatchSchedules.map((s) => removeSchedule(s.scheduleId)))
 
-    // Also clean up any legacy per-feed schedules
+    // Also clean up any legacy per-feed schedules for this user
     const { data: feeds } = await supabase
       .from('feeds')
       .select('id, qstash_schedule_id')
@@ -28,7 +33,7 @@ export async function POST() {
     }
 
     const scheduleId = await createDispatchSchedule()
-    return Response.json({ ok: true, scheduleId })
+    return Response.json({ ok: true, scheduleId, removedStale: dispatchSchedules.length })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     return Response.json({ error: msg }, { status: 500 })

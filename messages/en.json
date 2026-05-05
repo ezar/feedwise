@@ -216,7 +216,12 @@
     "activate": "Activate",
     "reschedule": "Reset",
     "scheduleActivated": "Hourly cron activated",
-    "rescheduleError": "Error activating schedule"
+    "rescheduleError": "Error activating schedule",
+    "manualDispatch": "Force sync now",
+    "dispatchNow": "Sync now",
+    "dispatching": "Dispatching…",
+    "dispatchOk": "Queued {dispatched}/{total} feeds — articles will appear in a few minutes",
+    "dispatchError": "Failed to dispatch jobs"
   },
   "sync": {
     "noFeeds": "No feeds to sync",

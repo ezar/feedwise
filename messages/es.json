@@ -216,7 +216,12 @@
     "activate": "Activar",
     "reschedule": "Reiniciar",
     "scheduleActivated": "Cron horario activado",
-    "rescheduleError": "Error al activar el schedule"
+    "rescheduleError": "Error al activar el schedule",
+    "manualDispatch": "Forzar sincronización",
+    "dispatchNow": "Sincronizar ahora",
+    "dispatching": "Despachando…",
+    "dispatchOk": "Encolados {dispatched}/{total} feeds — los artículos aparecerán en unos minutos",
+    "dispatchError": "Error al despachar los trabajos"
   },
   "sync": {
     "noFeeds": "No hay feeds para sincronizar",

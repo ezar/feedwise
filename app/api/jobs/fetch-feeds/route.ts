@@ -6,6 +6,7 @@ import { scoreArticle } from '@/lib/ai/scorer'
 import { sendPushNotification } from '@/lib/push/sender'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
   const receiver = new Receiver({
