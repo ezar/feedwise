@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Rss, Bookmark, Settings, LayoutDashboard, BarChart3, Sparkles } from 'lucide-react'
+import { Rss, Bookmark, Settings, LayoutDashboard, Sparkles } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
@@ -15,7 +15,6 @@ export function Sidebar() {
     { href: '/briefing', label: t('briefing'), icon: Sparkles },
     { href: '/feeds', label: t('feeds'), icon: Rss },
     { href: '/saved', label: t('saved'), icon: Bookmark },
-    { href: '/stats', label: t('stats'), icon: BarChart3 },
     { href: '/settings', label: t('settings'), icon: Settings },
   ]
 

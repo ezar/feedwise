@@ -165,6 +165,7 @@
     "importDescription": "Import your subscriptions from Feedly or another reader via OPML.",
     "languageTitle": "Language",
     "languageDescription": "Change the interface language.",
+    "statsTitle": "Reading stats",
     "pushTitle": "Push notifications",
     "pushDescription": "Get notified when new high-score articles arrive.",
     "rescoreTitle": "Re-score articles",
