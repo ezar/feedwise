@@ -14,7 +14,7 @@ export default async function SavedPage() {
     .select('id, title, url, description, published_at, relevance_score, ai_summary, is_read, is_saved, tags, note, feeds(title)')
     .eq('is_saved', true)
     .order('published_at', { ascending: false })
-    .limit(40)
+    .limit(100)
 
   type Row = NonNullable<typeof raw>[number]
   const articles = (raw ?? []).map((a: Row) => ({

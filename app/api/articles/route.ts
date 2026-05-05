@@ -9,7 +9,7 @@ export async function GET(req: Request) {
   const savedOnly = searchParams.get('saved') === 'true'
   const feedId = searchParams.get('feed_id')
   const page = parseInt(searchParams.get('page') ?? '1')
-  const pageSize = 40
+  const pageSize = 100
   const offset = (page - 1) * pageSize
 
   let query = supabase
