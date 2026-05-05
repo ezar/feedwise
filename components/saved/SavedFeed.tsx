@@ -77,7 +77,7 @@ function NoteEditor({ articleId, initialNote }: NoteEditorProps) {
   )
 }
 
-const PAGE_SIZE = 40
+const PAGE_SIZE = 100
 
 export function SavedFeed({ initialArticles }: { initialArticles: Article[] }) {
   const t = useTranslations('saved')
@@ -87,7 +87,12 @@ export function SavedFeed({ initialArticles }: { initialArticles: Article[] }) {
   const [loading, setLoading] = useState(false)
 
   const handleSaveToggle = useCallback((id: string, saved: boolean) => {
-    setArticles((prev) => prev.map((a) => (a.id === id ? { ...a, is_saved: saved } : a)))
+    if (!saved) {
+      // Remove unsaved articles from the saved list immediately
+      setArticles((prev) => prev.filter((a) => a.id !== id))
+    } else {
+      setArticles((prev) => prev.map((a) => (a.id === id ? { ...a, is_saved: true } : a)))
+    }
   }, [])
 
   const handleMarkRead = useCallback((id: string) => {

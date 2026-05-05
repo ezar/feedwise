@@ -49,7 +49,9 @@ interface HomeFeedProps {
   feedId?: string
 }
 
-const PAGE_SIZE = 100
+const INITIAL_SIZE = 100
+const LOAD_MORE_SIZE = 30
+const PAGE_SIZE = LOAD_MORE_SIZE
 const PULL_THRESHOLD = 72   // px to trigger refresh
 const STALE_MS = 5 * 60 * 1000 // auto-refresh after 5 min hidden
 
@@ -59,7 +61,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
 
   const [articles, setArticles] = useState<Article[]>(initialArticles)
   const [loadingMore, setLoadingMore] = useState(false)
-  const [hasMore, setHasMore] = useState(initialArticles.length === PAGE_SIZE)
+  const [hasMore, setHasMore] = useState(initialArticles.length >= INITIAL_SIZE)
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
   const [unreadSnapshot, setUnreadSnapshot] = useState<Set<string>>(new Set())
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -128,7 +130,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
 
   const sentinelRef = useRef<HTMLDivElement>(null)
   const loadingMoreRef = useRef(false)
-  const hasMoreRef = useRef(initialArticles.length === PAGE_SIZE)
+  const hasMoreRef = useRef(initialArticles.length >= INITIAL_SIZE)
   const pageRef = useRef(1)
   const articleEls = useRef<Map<string, HTMLDivElement>>(new Map())
 
@@ -137,8 +139,8 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
     setArticles(initialArticles)
     setRefreshing(false)
     pageRef.current = 1
-    hasMoreRef.current = initialArticles.length === PAGE_SIZE
-    setHasMore(initialArticles.length === PAGE_SIZE)
+    hasMoreRef.current = initialArticles.length >= INITIAL_SIZE
+    setHasMore(initialArticles.length >= INITIAL_SIZE)
     // If unread filter is active, refresh the snapshot with the new article set
     setUnreadSnapshot((prev) =>
       prev.size > 0
@@ -281,10 +283,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
     const observer = new IntersectionObserver(
       (entries) => {
         if (!entries[0].isIntersecting) return
-        if (hasMoreRef.current) {
-          void loadMore()
-        } else {
-          // End of list — user scrolled past everything, mark remaining visible articles read
+        if (!hasMoreRef.current) {
           markAllVisibleRead()
         }
       },
@@ -754,13 +753,22 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
 
       <div ref={sentinelRef} className="h-1" />
 
-      {loadingMore && (
+      {hasMore && (
         <div className="flex justify-center py-4">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <button
+            onClick={() => void loadMore()}
+            disabled={loadingMore}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground border rounded-lg px-4 py-2 hover:bg-muted transition-colors disabled:opacity-50"
+          >
+            {loadingMore
+              ? <><Loader2 className="h-4 w-4 animate-spin" />{t('loadingMore') ?? 'Cargando…'}</>
+              : <>{t('loadMore') ?? 'Cargar más'}</>
+            }
+          </button>
         </div>
       )}
 
-      {!hasMore && articles.length >= PAGE_SIZE && (
+      {!hasMore && articles.length >= INITIAL_SIZE && (
         <p className="text-xs text-muted-foreground text-center py-2">
           {t('reachedEnd', { count: articles.length })}
         </p>
