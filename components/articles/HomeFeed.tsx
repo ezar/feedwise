@@ -312,6 +312,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
   const handleMarkAllRead = useCallback(async () => {
     const feedParam = feedId ? `?feed_id=${feedId}` : ''
     setArticles((prev) => prev.map((a) => ({ ...a, is_read: true })))
+    setUnreadSnapshot(new Set())
     await fetch(`/api/articles/read-all${feedParam}`, { method: 'POST', credentials: 'include' })
   }, [feedId])
 
