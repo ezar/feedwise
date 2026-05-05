@@ -254,7 +254,8 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
     setLoadingMore(true)
     try {
       const feedParam = feedId ? `&feed_id=${feedId}` : ''
-      const res = await fetch(`/api/articles?offset=${offsetRef.current}${feedParam}`, { credentials: 'include' })
+      const unreadParam = filter === 'unread' ? '&unread=true' : ''
+      const res = await fetch(`/api/articles?offset=${offsetRef.current}${feedParam}${unreadParam}`, { credentials: 'include' })
       if (!res.ok) { hasMoreRef.current = false; setHasMore(false); return }
       const data = await res.json() as { articles?: Article[]; hasMore?: boolean }
       const next = data.articles ?? []
@@ -269,7 +270,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
       loadingMoreRef.current = false
       setLoadingMore(false)
     }
-  }, [feedId])
+  }, [feedId, filter])
 
   // Mark all articles still tracked in articleEls (visible, not yet scrolled past) as read
   const markAllVisibleRead = useCallback(() => {
@@ -631,7 +632,13 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
           </button>
           <div className="flex rounded-md border overflow-hidden text-xs">
             <button
-              onClick={() => { setFilter('all'); setUnreadSnapshot(new Set()) }}
+              onClick={() => {
+                setFilter('all')
+                setUnreadSnapshot(new Set())
+                offsetRef.current = articles.length
+                hasMoreRef.current = articles.length >= INITIAL_SIZE
+                setHasMore(articles.length >= INITIAL_SIZE)
+              }}
               className={cn(
                 'px-3 py-1 transition-colors',
                 filter === 'all' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
@@ -643,6 +650,10 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
               onClick={() => {
                 setFilter('unread')
                 setUnreadSnapshot(new Set(articles.filter((a) => !a.is_read).map((a) => a.id)))
+                // Reset offset: unread filter fetches independently from DB
+                offsetRef.current = 0
+                hasMoreRef.current = true
+                setHasMore(true)
               }}
               className={cn(
                 'px-3 py-1 transition-colors border-l',

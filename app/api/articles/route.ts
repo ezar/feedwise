@@ -10,8 +10,8 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url)
   const savedOnly = searchParams.get('saved') === 'true'
+  const unreadOnly = searchParams.get('unread') === 'true'
   const feedId = searchParams.get('feed_id')
-  // Use explicit offset so the caller controls exactly where to start
   const offset = parseInt(searchParams.get('offset') ?? '0')
 
   let query = supabase.from('articles').select(COLS)
@@ -25,6 +25,7 @@ export async function GET(req: Request) {
   }
 
   if (savedOnly) query = query.eq('is_saved', true)
+  if (unreadOnly) query = query.eq('is_read', false)
 
   query = query.range(offset, offset + PAGE_SIZE - 1)
 
