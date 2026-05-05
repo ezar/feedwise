@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 
 const COLS = 'id,title,url,description,published_at,relevance_score,ai_summary,is_read,is_saved,tags,note,feed_id,feeds(title)'
-const PAGE_SIZE = 40
+const PAGE_SIZE = 100
 
 export async function GET(req: Request) {
   const supabase = createClient()
