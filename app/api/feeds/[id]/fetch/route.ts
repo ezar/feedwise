@@ -11,14 +11,24 @@ export async function POST(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: feed, error } = await supabase
-    .from('feeds')
-    .select('id, url, user_id, user_profile!inner(interests, threshold, locale)')
-    .eq('id', params.id)
-    .eq('user_id', user.id)
-    .single()
+  // Two separate queries — no cross-table join needed
+  const [feedRes, profileRes] = await Promise.all([
+    supabase
+      .from('feeds')
+      .select('id, url, user_id')
+      .eq('id', params.id)
+      .eq('user_id', user.id)
+      .single(),
+    supabase
+      .from('user_profile')
+      .select('interests, threshold, locale')
+      .eq('id', user.id)
+      .single(),
+  ])
 
-  if (error || !feed) return Response.json({ error: 'Feed not found' }, { status: 404 })
+  if (feedRes.error || !feedRes.data) return Response.json({ error: 'Feed not found' }, { status: 404 })
+  const feed = feedRes.data
+  const profile = profileRes.data
 
   const service = createServiceClient()
 
@@ -56,9 +66,6 @@ export async function POST(
     )
   )
 
-  type ProfileRow = { interests: string; threshold?: number; locale?: string }
-  const rawProfile = feed.user_profile
-  const profile = (Array.isArray(rawProfile) ? rawProfile[0] : rawProfile) as ProfileRow | null
   const interests = profile?.interests?.trim() ?? ''
   const locale = profile?.locale ?? 'es'
 

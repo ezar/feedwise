@@ -11,11 +11,18 @@ export const maxDuration = 60
 async function processFeed(feedId: string, supabase: ReturnType<typeof createServiceClient>) {
   const { data: feed, error } = await supabase
     .from('feeds')
-    .select('*, user_profile!inner(interests, threshold, locale)')
+    .select('id, url, user_id')
     .eq('id', feedId)
     .single()
 
   if (error || !feed) return { feedId, error: 'Feed not found' }
+
+  // Fetch user profile separately — no direct FK between feeds and user_profile
+  const { data: profile } = await supabase
+    .from('user_profile')
+    .select('interests, threshold, locale')
+    .eq('id', feed.user_id as string)
+    .single()
 
   let items
   try {
@@ -51,7 +58,6 @@ async function processFeed(feedId: string, supabase: ReturnType<typeof createSer
     )
   )
 
-  const profile = feed.user_profile as { interests: string; threshold?: number; locale?: string } | null
   const interests = profile?.interests?.trim() ?? ''
   const locale = profile?.locale ?? 'es'
   const threshold = profile?.threshold ?? 50
