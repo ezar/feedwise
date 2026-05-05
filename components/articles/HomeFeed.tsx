@@ -6,6 +6,7 @@ import { Loader2, Newspaper, CheckCheck, ArrowDown, LayoutList, LayoutGrid, Copy
 import { useTranslations } from 'next-intl'
 import { ArticleCard } from './ArticleCard'
 import { ArticleRow } from './ArticleRow'
+import { ReaderModal } from './ReaderModal'
 import { SwipeableArticle } from './SwipeableArticle'
 import { ShortcutsModal } from './ShortcutsModal'
 import { groupDuplicates } from '@/lib/dedup'
@@ -533,6 +534,21 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
 
       {showShortcuts && <ShortcutsModal onClose={() => setShowShortcuts(false)} />}
 
+      {/* Reader modal for compact-view rows (no ArticleCard mounted) */}
+      {viewMode === 'compact' && readerOpenId && (() => {
+        const art = articles.find((a) => a.id === readerOpenId)
+        if (!art) return null
+        return (
+          <ReaderModal
+            url={art.url ?? ''}
+            title={art.title ?? ''}
+            articleId={art.id}
+            fallbackSummary={art.ai_summary ?? art.description ?? undefined}
+            onClose={() => setReaderOpenId(null)}
+          />
+        )
+      })()}
+
       {/* Date filter chips */}
       <div className="flex gap-1.5">
         {(['all', 'today', 'week'] as DateFilter[]).map((f) => (
@@ -552,7 +568,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
       </div>
 
       {/* Filter bar */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="text-xs text-muted-foreground shrink-0">
           {unreadCount > 0 ? t('unread', { count: unreadCount }) : t('allRead')}
           {' · '}{t('loaded', { count: dedupEnabled ? dedupedCount : visible.length })}
@@ -654,7 +670,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
                         onSwipeLeft={() => { handleSaveToggle(main.id, !main.is_saved); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_saved: !main.is_saved }) }) }}
                         onSwipeRight={() => { handleMarkRead(main.id); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_read: true }) }) }}
                       >
-                        <ArticleRow article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => toggleCard(main.id)} />
+                        <ArticleRow article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => toggleCard(main.id)} onOpenReader={() => setReaderOpenId(main.id)} />
                       </SwipeableArticle>
                     )}
                   </div>
@@ -682,7 +698,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
                           </div>
                         </div>
                       ) : (
-                        <ArticleRow article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => toggleCard(dupe.id)} />
+                        <ArticleRow article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => toggleCard(dupe.id)} onOpenReader={() => setReaderOpenId(dupe.id)} />
                       )}
                     </div>
                   ))}

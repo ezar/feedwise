@@ -1,6 +1,6 @@
 'use client'
 
-import { ExternalLink, ChevronDown } from 'lucide-react'
+import { BookOpen, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Article {
@@ -19,6 +19,7 @@ interface ArticleRowProps {
   onSaveToggle?: (id: string, saved: boolean) => void
   onMarkRead?: (id: string) => void
   onExpand?: () => void
+  onOpenReader?: () => void
 }
 
 function scoreBadgeClass(score: number) {
@@ -27,8 +28,22 @@ function scoreBadgeClass(score: number) {
   return 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400'
 }
 
-export function ArticleRow({ article, onMarkRead, onExpand }: ArticleRowProps) {
+export function ArticleRow({ article, onMarkRead, onExpand, onOpenReader }: ArticleRowProps) {
   const handleLinkClick = () => {
+    if (!article.is_read) {
+      onMarkRead?.(article.id)
+      fetch(`/api/articles/${article.id}`, {
+        credentials: 'include',
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_read: true }),
+      })
+    }
+  }
+
+  const handleOpenReader = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onOpenReader?.()
     if (!article.is_read) {
       onMarkRead?.(article.id)
       fetch(`/api/articles/${article.id}`, {
@@ -78,16 +93,13 @@ export function ArticleRow({ article, onMarkRead, onExpand }: ArticleRowProps) {
         {article.feeds?.title && (
           <span className="hidden sm:inline truncate max-w-[120px]">{article.feeds.title}</span>
         )}
-        <a
-          href={article.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={handleLinkClick}
+        <button
+          onClick={handleOpenReader}
           className="opacity-0 group-hover:opacity-100 transition-opacity"
-          title="Abrir artículo"
+          title="Modo lector"
         >
-          <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
-        </a>
+          <BookOpen className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+        </button>
         {onExpand && (
           <ChevronDown className="h-3.5 w-3.5 opacity-40 group-hover:opacity-70 transition-opacity" />
         )}
