@@ -58,10 +58,6 @@ export function ArticleRow({ article, onSaveToggle, onMarkRead, onExpand }: Arti
     }
   }
 
-  const pubDate = article.published_at
-    ? new Date(article.published_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-    : null
-
   const score = article.relevance_score
 
   return (
