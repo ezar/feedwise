@@ -176,7 +176,7 @@ export function ChatInterface({ feeds }: { feeds: Feed[] }) {
       {messages.length > 0 && (
         <button
           onClick={() => { abortRef.current?.abort(); setMessages([]); setStreaming(false) }}
-          title="Nueva conversación"
+          title={t('newChat')}
           className="shrink-0 flex items-center justify-center h-9 w-9 rounded-lg border bg-background hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
         >
           <PenSquare className="h-4 w-4" />

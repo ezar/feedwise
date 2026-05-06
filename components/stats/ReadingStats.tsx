@@ -117,18 +117,18 @@ export function ReadingStats() {
         <div className="rounded-xl border bg-card p-4 flex flex-col gap-1">
           <div className="flex items-center gap-2 text-muted-foreground mb-1">
             <Inbox className="h-4 w-4 text-violet-500" />
-            <span className="text-xs">Sin leer</span>
+            <span className="text-xs">{t('unread')}</span>
           </div>
           <p className="text-3xl font-bold tabular-nums leading-none">{data.totalUnread.toLocaleString()}</p>
-          <p className="text-xs text-muted-foreground mt-1">artículos</p>
+          <p className="text-xs text-muted-foreground mt-1">{t('articles')}</p>
         </div>
         <div className="rounded-xl border bg-card p-4 flex flex-col gap-1">
           <div className="flex items-center gap-2 text-muted-foreground mb-1">
             <Bookmark className="h-4 w-4 text-yellow-500" />
-            <span className="text-xs">Guardados</span>
+            <span className="text-xs">{t('saved')}</span>
           </div>
           <p className="text-3xl font-bold tabular-nums leading-none">{data.totalSaved.toLocaleString()}</p>
-          <p className="text-xs text-muted-foreground mt-1">artículos</p>
+          <p className="text-xs text-muted-foreground mt-1">{t('articles')}</p>
         </div>
       </div>
 
@@ -140,8 +140,8 @@ export function ReadingStats() {
             <p className="text-sm font-medium">{t('last7days')}</p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-muted-foreground">Esta semana</p>
-            <p className="text-sm font-semibold tabular-nums">{thisWeek} · ~{avgPerDay}/día</p>
+            <p className="text-xs text-muted-foreground">{t('thisWeek')}</p>
+            <p className="text-sm font-semibold tabular-nums">{thisWeek} · ~{avgPerDay}{t('perDay')}</p>
           </div>
         </div>
         <div className="flex items-end gap-1.5 h-28">
@@ -172,7 +172,7 @@ export function ReadingStats() {
       {data.topFeeds.length > 0 && (
         <div className="rounded-xl border bg-card p-4">
           <p className="text-sm font-medium mb-3">{t('topSources')}</p>
-          <p className="text-xs text-muted-foreground mb-3">Últimos 90 días</p>
+          <p className="text-xs text-muted-foreground mb-3">{t('last90days')}</p>
           <div className="flex flex-col gap-3">
             {data.topFeeds.map(({ title, count }, i) => {
               const pct = Math.round((count / data.topFeeds[0].count) * 100)

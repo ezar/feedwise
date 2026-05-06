@@ -6,7 +6,9 @@
     "settings": "Settings",
     "stats": "Stats",
     "briefing": "Briefing",
-    "chat": "Chat"
+    "chat": "Chat",
+    "ia": "AI",
+    "profile": "Profile"
   },
   "auth": {
     "signInTitle": "Sign in to your account",
@@ -260,7 +262,12 @@
     "totalRead": "Total read",
     "articles": "articles",
     "last7days": "Last 7 days",
-    "topSources": "Favourite sources"
+    "topSources": "Favourite sources",
+    "unread": "Unread",
+    "saved": "Saved",
+    "thisWeek": "This week",
+    "perDay": "/day",
+    "last90days": "Last 90 days"
   },
   "trending": {
     "title": "Trending this week"
@@ -271,7 +278,9 @@
     "emptyTitle": "Chat with your articles",
     "emptyHint": "Ask questions about your feeds from the last 14 days. You can focus on a specific feed or folder.",
     "placeholder": "Ask something about your articles…",
-    "error": "Error getting response. Try again."
+    "error": "Error getting response. Try again.",
+    "newChat": "New conversation",
+    "subtitle": "Ask about your articles from the last 14 days"
   },
   "push": {
     "enable": "Enable notifications",

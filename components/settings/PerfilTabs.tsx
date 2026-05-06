@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { BarChart3, Settings } from 'lucide-react'
 import { ReadingStats } from '@/components/stats/ReadingStats'
 import { InterestsForm } from '@/components/settings/InterestsForm'
@@ -37,6 +38,8 @@ interface Props {
 
 export function PerfilTabs({ initialInterests, initialThreshold, settingsLabels: l, buildVersion }: Props) {
   const [tab, setTab] = useState<Tab>('stats')
+  const tNav = useTranslations('nav')
+  const tSettings = useTranslations('settings')
 
   return (
     <div>
@@ -50,7 +53,7 @@ export function PerfilTabs({ initialInterests, initialThreshold, settingsLabels:
           )}
         >
           <BarChart3 className="h-4 w-4" />
-          Estadísticas
+          {tNav('stats')}
         </button>
         <button
           onClick={() => setTab('settings')}
@@ -60,7 +63,7 @@ export function PerfilTabs({ initialInterests, initialThreshold, settingsLabels:
           )}
         >
           <Settings className="h-4 w-4" />
-          Ajustes
+          {tSettings('title')}
         </button>
       </div>
 

@@ -12,10 +12,10 @@ export function MobileNav() {
 
   const navItems = [
     { href: '/', label: t('feed'), icon: LayoutDashboard },
-    { href: '/ia', label: 'IA', icon: Bot },
+    { href: '/ia', label: t('ia'), icon: Bot },
     { href: '/feeds', label: t('feeds'), icon: Rss },
     { href: '/saved', label: t('saved'), icon: Bookmark },
-    { href: '/profile', label: 'Perfil', icon: User },
+    { href: '/profile', label: t('profile'), icon: User },
   ]
 
   return (

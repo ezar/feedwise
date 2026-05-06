@@ -20,6 +20,7 @@ export default async function PerfilPage() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const t = await getTranslations('settings')
+  const tNav = await getTranslations('nav')
 
   const { data: profile } = await supabase
     .from('user_profile')
@@ -29,7 +30,7 @@ export default async function PerfilPage() {
 
   return (
     <div className="max-w-xl mx-auto flex flex-col gap-4">
-      <h2 className="text-xl font-semibold">Perfil</h2>
+      <h2 className="text-xl font-semibold">{tNav('profile')}</h2>
       <PerfilTabs
         initialInterests={profile?.interests ?? ''}
         initialThreshold={profile?.threshold ?? 50}

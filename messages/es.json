@@ -4,9 +4,11 @@
     "feeds": "Mis feeds",
     "saved": "Guardados",
     "settings": "Configuración",
-    "stats": "Stats",
+    "stats": "Estadísticas",
     "briefing": "Briefing",
-    "chat": "Chat"
+    "chat": "Chat",
+    "ia": "IA",
+    "profile": "Perfil"
   },
   "auth": {
     "signInTitle": "Inicia sesión en tu cuenta",
@@ -260,7 +262,12 @@
     "totalRead": "Total leídos",
     "articles": "artículos",
     "last7days": "Últimos 7 días",
-    "topSources": "Fuentes favoritas"
+    "topSources": "Fuentes favoritas",
+    "unread": "Sin leer",
+    "saved": "Guardados",
+    "thisWeek": "Esta semana",
+    "perDay": "/día",
+    "last90days": "Últimos 90 días"
   },
   "trending": {
     "title": "Tendencias esta semana"
@@ -271,7 +278,9 @@
     "emptyTitle": "Chat con tus artículos",
     "emptyHint": "Haz preguntas sobre tus feeds de los últimos 14 días. Puedes enfocarte en un feed o carpeta concretos.",
     "placeholder": "Pregunta algo sobre tus artículos…",
-    "error": "Error al obtener respuesta. Inténtalo de nuevo."
+    "error": "Error al obtener respuesta. Inténtalo de nuevo.",
+    "newChat": "Nueva conversación",
+    "subtitle": "Pregunta sobre tus artículos de los últimos 14 días"
   },
   "push": {
     "enable": "Activar notificaciones",
