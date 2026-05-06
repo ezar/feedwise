@@ -15,7 +15,7 @@ export function MobileNav() {
     { href: '/ia', label: 'IA', icon: Bot },
     { href: '/feeds', label: t('feeds'), icon: Rss },
     { href: '/saved', label: t('saved'), icon: Bookmark },
-    { href: '/perfil', label: 'Perfil', icon: User },
+    { href: '/profile', label: 'Perfil', icon: User },
   ]
 
   return (
