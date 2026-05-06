@@ -2,8 +2,10 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { X, ExternalLink, Loader2, BookOpen, AlertCircle, Highlighter, Trash2, Bookmark, BookmarkCheck, Share2 } from 'lucide-react'
+import { X, ExternalLink, Loader2, BookOpen, AlertCircle, Highlighter, Trash2, Bookmark, BookmarkCheck, Sparkles } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
+import { ShareButton } from './ShareButton'
 
 interface ReaderContent {
   title: string
@@ -37,10 +39,11 @@ function readingTime(chars: number) {
 type FontSize = 'sm' | 'base' | 'lg' | 'xl'
 const FONT_SIZES: FontSize[] = ['sm', 'base', 'lg', 'xl']
 const FONT_PROSE: Record<FontSize, string> = {
-  sm: 'prose-sm', base: 'prose-base', lg: 'prose-lg', xl: 'prose-xl',
+  sm: 'prose-sm', base: '', lg: 'prose-lg', xl: 'prose-xl',
 }
 
 export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = false, onSaveToggle, onClose }: ReaderModalProps) {
+  const t = useTranslations('article')
   const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading')
   const [content, setContent] = useState<ReaderContent | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
@@ -51,7 +54,9 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null)
   const [showHighlights, setShowHighlights] = useState(false)
   const [saved, setSaved] = useState(isSaved)
-  const [shareMsg, setShareMsg] = useState('')
+  const [aiSummary, setAiSummary] = useState<string | null>(fallbackSummary ?? null)
+  const [showSummary, setShowSummary] = useState(false)
+  const [loadingSummary, setLoadingSummary] = useState(false)
   const backdropRef = useRef<HTMLDivElement>(null)
   const articleRef = useRef<HTMLDivElement>(null)
 
@@ -75,12 +80,15 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
         setContent(data)
         setState('ok')
       } catch (e) {
-        setErrorMsg(e instanceof Error ? e.message : 'Error loading content')
+        const msg = e instanceof Error ? e.message : 'Error'
+        // Hide internal JSDOM/parser errors from users
+        const isInternalError = msg.includes('pattern') || msg.includes('jsdom') || msg.includes('Parse error')
+        setErrorMsg(isInternalError ? t('loadError') : msg)
         setState('error')
       }
     }
     void fetchContent()
-  }, [url])
+  }, [url, t])
 
   useEffect(() => {
     fetch(`/api/articles/${articleId}/highlights`, { credentials: 'include' })
@@ -149,16 +157,26 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
     })
   }, [saved, articleId, onSaveToggle])
 
-  const handleShare = useCallback(async () => {
-    const shareTitle = content?.title ?? title
-    if (navigator.share) {
-      await navigator.share({ title: shareTitle, url }).catch(() => {})
-    } else {
-      await navigator.clipboard.writeText(url).catch(() => {})
-      setShareMsg('¡Copiado!')
-      setTimeout(() => setShareMsg(''), 2000)
+  const handleSummary = useCallback(async () => {
+    if (aiSummary) {
+      setShowSummary((v) => !v)
+      return
     }
-  }, [content, title, url])
+    setLoadingSummary(true)
+    setShowSummary(true)
+    try {
+      const res = await fetch(`/api/articles/${articleId}/summarize`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      if (res.ok) {
+        const data = await res.json() as { summary?: string }
+        if (data.summary) setAiSummary(data.summary)
+      }
+    } catch { /* silent */ } finally {
+      setLoadingSummary(false)
+    }
+  }, [aiSummary, articleId])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -267,6 +285,20 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
           </div>
         )}
 
+        {/* AI summary panel */}
+        {showSummary && (
+          <div className="border-b px-6 py-3 bg-primary/5 flex flex-col gap-2 max-h-48 overflow-y-auto shrink-0">
+            <p className="text-xs font-semibold text-primary flex items-center gap-1">
+              <Sparkles className="h-3 w-3" />
+              {t('summaryTitle')}
+            </p>
+            {loadingSummary
+              ? <div className="flex items-center gap-2 text-muted-foreground text-xs"><Loader2 className="h-3 w-3 animate-spin" />{t('summarizing')}</div>
+              : <p className="text-sm leading-relaxed text-foreground/80">{aiSummary}</p>
+            }
+          </div>
+        )}
+
         {/* Scrollable body */}
         <div className="reader-scroll flex-1 overflow-y-auto overscroll-contain px-6 py-6 sm:px-8 relative min-h-0" onMouseUp={handleMouseUp}>
           {tooltip && (
@@ -280,7 +312,7 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
                 className="flex items-center gap-1.5 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 text-xs font-semibold px-2.5 py-1.5 rounded-full shadow-lg transition-colors whitespace-nowrap"
               >
                 <Highlighter className="h-3 w-3" />
-                Guardar highlight
+                {t('saveHighlight')}
               </button>
               <div className="w-2 h-2 bg-yellow-400 rotate-45 mx-auto -mt-1" />
             </div>
@@ -289,7 +321,7 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
           {state === 'loading' && (
             <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
               <Loader2 className="h-6 w-6 animate-spin" />
-              <p className="text-sm">Cargando artículo…</p>
+              <p className="text-sm">{t('loading')}</p>
             </div>
           )}
 
@@ -298,7 +330,7 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
               <div className="flex items-start gap-2 text-muted-foreground bg-muted/50 rounded-lg p-4">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium">No se pudo cargar el contenido completo</p>
+                  <p className="text-sm font-medium">{t('loadError')}</p>
                   <p className="text-xs mt-0.5 opacity-70">{errorMsg}</p>
                 </div>
               </div>
@@ -348,29 +380,38 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted'
               )}
             >
-              {saved
-                ? <BookmarkCheck className="h-4 w-4" />
-                : <Bookmark className="h-4 w-4" />
-              }
-              <span className="hidden sm:inline">{saved ? 'Guardado' : 'Guardar'}</span>
+              {saved ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+              <span className="hidden sm:inline">{saved ? t('saved') : t('save')}</span>
             </button>
             <button
-              onClick={() => void handleShare()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              onClick={() => void handleSummary()}
+              disabled={loadingSummary}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
+                showSummary
+                  ? 'text-primary bg-primary/10 hover:bg-primary/20'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              )}
             >
-              <Share2 className="h-4 w-4" />
-              <span className="hidden sm:inline">{shareMsg || 'Compartir'}</span>
+              {loadingSummary
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <Sparkles className="h-4 w-4" />
+              }
+              <span className="hidden sm:inline">{t('summarize')}</span>
             </button>
           </div>
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          >
-            <ExternalLink className="h-4 w-4" />
-            <span className="hidden sm:inline">Original</span>
-          </a>
+          <div className="flex items-center gap-1">
+            <ShareButton articleId={articleId} title={content?.title ?? title} url={url} summary={aiSummary} />
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <ExternalLink className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('openOriginal')}</span>
+            </a>
+          </div>
         </div>
       </div>
     </div>

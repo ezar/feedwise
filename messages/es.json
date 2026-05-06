@@ -64,11 +64,19 @@
   },
   "article": {
     "reader": "Modo lector",
-    "save": "Guardar artículo",
+    "save": "Guardar",
+    "saved": "Guardado",
     "unsave": "Quitar de guardados",
     "saveError": "Error al guardar",
     "saveSuccess": "Artículo guardado",
-    "unsaveSuccess": "Eliminado de guardados"
+    "unsaveSuccess": "Eliminado de guardados",
+    "loading": "Cargando artículo…",
+    "loadError": "No se pudo cargar el contenido",
+    "saveHighlight": "Guardar selección",
+    "openOriginal": "Original",
+    "summarize": "Resumen IA",
+    "summarizing": "Resumiendo…",
+    "summaryTitle": "Resumen IA"
   },
   "share": {
     "button": "Compartir",

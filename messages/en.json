@@ -64,11 +64,19 @@
   },
   "article": {
     "reader": "Reader mode",
-    "save": "Save article",
+    "save": "Save",
+    "saved": "Saved",
     "unsave": "Remove from saved",
     "saveError": "Error saving",
     "saveSuccess": "Article saved",
-    "unsaveSuccess": "Removed from saved"
+    "unsaveSuccess": "Removed from saved",
+    "loading": "Loading article…",
+    "loadError": "Could not load content",
+    "saveHighlight": "Save selection",
+    "openOriginal": "Original",
+    "summarize": "AI Summary",
+    "summarizing": "Summarising…",
+    "summaryTitle": "AI Summary"
   },
   "share": {
     "button": "Share",
