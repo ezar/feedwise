@@ -798,9 +798,20 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
       )}
 
       {!hasMore && articles.length >= INITIAL_SIZE && (
-        <p className="text-xs text-muted-foreground text-center py-2">
-          {t('reachedEnd', { count: articles.length })}
-        </p>
+        <div className="flex flex-col items-center gap-3 py-4">
+          <p className="text-xs text-muted-foreground text-center">
+            {t('reachedEnd', { count: articles.length })}
+          </p>
+          {unreadCount > 0 && (
+            <button
+              onClick={handleMarkAllRead}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-primary/30 text-primary hover:bg-primary/5 transition-colors"
+            >
+              <CheckCheck className="h-3.5 w-3.5" />
+              {t('markAllRead')}
+            </button>
+          )}
+        </div>
       )}
     </div>
   )
