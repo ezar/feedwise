@@ -53,32 +53,31 @@ export function ReadingStats() {
     }
 
     const readDaySet = new Set<string>()
-    const weekStart = toLocalDate(new Date(today.getTime() - 7 * 86400000).toISOString())
     let thisWeekCount = 0
 
     for (const ts of data.readTimestamps) {
       const day = toLocalDate(ts)
       readDaySet.add(day)
-      if (dayMap.has(day)) dayMap.set(day, (dayMap.get(day) ?? 0) + 1)
-      if (day >= weekStart) thisWeekCount++
+      if (dayMap.has(day)) {
+        dayMap.set(day, (dayMap.get(day) ?? 0) + 1)
+        thisWeekCount++
+      }
     }
 
     const dailyReads = Array.from(dayMap.entries()).map(([day, count]) => ({ day, count }))
 
-    // Streak: consecutive days with reads (local time), allow today to have no reads yet
+    // Streak: consecutive days ending today or yesterday (local time)
     let streakCount = 0
     const cur = new Date()
     cur.setHours(0, 0, 0, 0)
     if (!readDaySet.has(todayLocal())) cur.setDate(cur.getDate() - 1)
-    while (true) {
-      const d = toLocalDate(cur.toISOString())
-      if (!readDaySet.has(d)) break
+    while (readDaySet.has(toLocalDate(cur.toISOString()))) {
       streakCount++
       cur.setDate(cur.getDate() - 1)
     }
 
-    const totalDays = readDaySet.size
-    const avgPerDay = totalDays > 0 ? Math.round(data.readTimestamps.length / Math.max(totalDays, 1)) : 0
+    // Avg per day = this week total ÷ 7 calendar days
+    const avgPerDay = Math.round(thisWeekCount / 7)
 
     return { dailyReads, streak: streakCount, thisWeek: thisWeekCount, avgPerDay }
   }, [data])
