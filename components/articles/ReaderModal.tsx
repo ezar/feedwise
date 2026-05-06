@@ -38,8 +38,8 @@ function readingTime(chars: number) {
 
 type FontSize = 'sm' | 'base' | 'lg' | 'xl'
 const FONT_SIZES: FontSize[] = ['sm', 'base', 'lg', 'xl']
-const FONT_PROSE: Record<FontSize, string> = {
-  sm: 'prose-sm', base: '', lg: 'prose-lg', xl: 'prose-xl',
+const FONT_SIZE_PX: Record<FontSize, string> = {
+  sm: '0.875rem', base: '1rem', lg: '1.125rem', xl: '1.25rem',
 }
 
 export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = false, onSaveToggle, onClose }: ReaderModalProps) {
@@ -352,8 +352,9 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
                 <p className="text-sm text-muted-foreground mb-5">{content.byline}</p>
               )}
               <div
+                style={{ fontSize: FONT_SIZE_PX[fontSize] }}
                 className={cn(
-                  'prose dark:prose-invert max-w-none', FONT_PROSE[fontSize],
+                  'prose dark:prose-invert max-w-none',
                   'prose-headings:font-semibold prose-headings:leading-snug',
                   'prose-a:text-primary prose-a:no-underline hover:prose-a:underline',
                   'prose-img:rounded-lg prose-img:max-w-full prose-img:h-auto',
