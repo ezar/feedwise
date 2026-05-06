@@ -18,6 +18,7 @@ interface Feed {
   last_fetched_at?: string | null
   last_error?: string | null
   folder?: string | null
+  unread_count?: number
 }
 
 interface FeedListProps {
@@ -160,6 +161,11 @@ export function FeedList({ feeds, onDeleted }: FeedListProps) {
           <div onClick={(e) => e.preventDefault()}>
             <FolderEditor feedId={feed.id} initial={feed.folder} />
           </div>
+          {(feed.unread_count ?? 0) > 0 && (
+            <span className="text-xs font-medium tabular-nums bg-primary/10 text-primary rounded-full px-2 py-0.5 shrink-0">
+              {feed.unread_count}
+            </span>
+          )}
           <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
           <Button
             variant="ghost"

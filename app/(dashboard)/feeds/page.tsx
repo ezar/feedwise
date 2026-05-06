@@ -18,6 +18,7 @@ interface Feed {
   topic_query?: string | null
   last_fetched_at?: string | null
   folder?: string | null
+  unread_count?: number
 }
 
 interface TopicPreview {
