@@ -6,31 +6,23 @@ import { scoreArticle } from '@/lib/ai/scorer'
 import { sendPushNotification } from '@/lib/push/sender'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
-export async function POST(req: NextRequest) {
-  const receiver = new Receiver({
-    currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
-    nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY!,
-  })
-
-  const rawBody = await req.text()
-  const signature = req.headers.get('upstash-signature') ?? ''
-
-  const isValid = await receiver.verify({ signature, body: rawBody }).catch(() => false)
-  if (!isValid) return Response.json({ error: 'Invalid signature' }, { status: 401 })
-
-  const { feedId } = JSON.parse(rawBody) as { feedId?: string }
-  if (!feedId) return Response.json({ error: 'feedId required' }, { status: 400 })
-
-  const supabase = createServiceClient()
-
+async function processFeed(feedId: string, supabase: ReturnType<typeof createServiceClient>) {
   const { data: feed, error } = await supabase
     .from('feeds')
-    .select('*, user_profile!inner(interests, threshold)')
+    .select('id, url, user_id')
     .eq('id', feedId)
     .single()
 
-  if (error || !feed) return Response.json({ error: 'Feed not found' }, { status: 404 })
+  if (error || !feed) return { feedId, error: 'Feed not found' }
+
+  // Fetch user profile separately — no direct FK between feeds and user_profile
+  const { data: profile } = await supabase
+    .from('user_profile')
+    .select('interests, threshold, locale')
+    .eq('id', feed.user_id as string)
+    .single()
 
   let items
   try {
@@ -42,10 +34,9 @@ export async function POST(req: NextRequest) {
       .from('feeds')
       .update({ last_fetched_at: new Date().toISOString(), last_error: msg })
       .eq('id', feedId)
-    return Response.json({ error: msg, feedId }, { status: 422 })
+    return { feedId, error: msg }
   }
 
-  // Upsert all articles in parallel
   const upserted = await Promise.all(
     items.map((item) =>
       supabase
@@ -67,15 +58,13 @@ export async function POST(req: NextRequest) {
     )
   )
 
-  const profile = feed.user_profile as { interests: string } | null
   const interests = profile?.interests?.trim() ?? ''
+  const locale = profile?.locale ?? 'es'
+  const threshold = profile?.threshold ?? 50
 
-  // Score unprocessed articles in parallel (cap at 10 concurrent AI calls)
   const toScore = upserted.filter((a) => a && !a.ai_processed)
   let processed = 0
   const highScoreArticles: Array<{ title: string; url: string }> = []
-
-  const threshold = (feed.user_profile as { threshold?: number } | null)?.threshold ?? 50
 
   for (let i = 0; i < toScore.length; i += 10) {
     const batch = toScore.slice(i, i + 10)
@@ -86,10 +75,10 @@ export async function POST(req: NextRequest) {
           await supabase.from('articles').update({ ai_processed: true }).eq('id', article.id)
           return
         }
-        const { score, summary } = await scoreArticle(article, interests)
+        const { score, summary, tags } = await scoreArticle(article, interests, locale)
         await supabase
           .from('articles')
-          .update({ relevance_score: score, ai_summary: summary, ai_processed: true })
+          .update({ relevance_score: score, ai_summary: summary, tags, ai_processed: true })
           .eq('id', article.id)
         processed++
         if (score >= threshold) highScoreArticles.push({ title: article.title, url: article.url ?? '' })
@@ -97,7 +86,6 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Send push notifications for high-score new articles
   if (highScoreArticles.length > 0) {
     const userId = feed.user_id as string
     const { data: subs } = await supabase
@@ -121,5 +109,34 @@ export async function POST(req: NextRequest) {
     .update({ last_fetched_at: new Date().toISOString() })
     .eq('id', feedId)
 
-  return Response.json({ ok: true, feedId, processed })
+  return { feedId, processed }
+}
+
+export async function POST(req: NextRequest) {
+  const receiver = new Receiver({
+    currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
+    nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY!,
+  })
+
+  const rawBody = await req.text()
+  const signature = req.headers.get('upstash-signature') ?? ''
+
+  const isValid = await receiver.verify({ signature, body: rawBody }).catch(() => false)
+  if (!isValid) return Response.json({ error: 'Invalid signature' }, { status: 401 })
+
+  const body = JSON.parse(rawBody) as { feedId?: string; feedIds?: string[] }
+  // Support both legacy single feedId and new batched feedIds
+  const feedIds = body.feedIds ?? (body.feedId ? [body.feedId] : [])
+  if (!feedIds.length) return Response.json({ error: 'feedId or feedIds required' }, { status: 400 })
+
+  const supabase = createServiceClient()
+
+  // Process feeds in the batch in parallel
+  const results = await Promise.allSettled(feedIds.map((id) => processFeed(id, supabase)))
+  const processed = results.reduce((sum, r) => {
+    if (r.status === 'fulfilled' && typeof r.value.processed === 'number') return sum + r.value.processed
+    return sum
+  }, 0)
+
+  return Response.json({ ok: true, feedIds, processed })
 }

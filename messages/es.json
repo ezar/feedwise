@@ -4,7 +4,9 @@
     "feeds": "Mis feeds",
     "saved": "Guardados",
     "settings": "Configuración",
-    "stats": "Stats"
+    "stats": "Stats",
+    "briefing": "Briefing",
+    "chat": "Chat"
   },
   "auth": {
     "signInTitle": "Inicia sesión en tu cuenta",
@@ -38,9 +40,28 @@
     "reachedEnd": "Has llegado al final · {count} artículos",
     "pullToRefresh": "Suelta para actualizar",
     "pulling": "Tira para actualizar",
-    "refreshing": "Actualizando…"
+    "refreshing": "Actualizando…",
+    "viewCompact": "Vista compacta",
+    "viewCard": "Vista en tarjetas",
+    "dedupOn": "Deduplicación activada — pulsa para desactivar",
+    "dedupOff": "Deduplicación desactivada — pulsa para activar",
+    "dupeHidden": "{count} similares ocultos",
+    "dupesCollapsed": "+ {count} artículos similares",
+    "collapse": "Colapsar",
+    "search": "Buscar artículos…",
+    "searchClear": "Borrar",
+    "searchResultCount": "{count} resultados",
+    "searchNoResults": "Sin resultados",
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "thisWeek": "Esta semana",
+    "older": "Más antiguos",
+    "dateAll": "Todo",
+    "dateToday": "Hoy",
+    "dateWeek": "Esta semana"
   },
   "article": {
+    "reader": "Modo lector",
     "save": "Guardar artículo",
     "unsave": "Quitar de guardados",
     "saveError": "Error al guardar",
@@ -53,7 +74,20 @@
     "copyText": "Copiar resumen",
     "copied": "¡Copiado!",
     "whatsapp": "WhatsApp",
-    "linkedin": "LinkedIn"
+    "linkedin": "LinkedIn",
+    "summarize": "Resumir con IA",
+    "summarizing": "Resumiendo…"
+  },
+  "briefing": {
+    "title": "Briefing diario",
+    "cta": "Generar el briefing de hoy",
+    "ctaHint": "La IA lee tus 20 mejores artículos de las últimas 48h y escribe un resumen por temas.",
+    "generate": "Generar briefing",
+    "generating": "Generando tu briefing…",
+    "regenerate": "Regenerar",
+    "basedOn": "Basado en {count} artículos de tus feeds",
+    "noArticles": "No hay artículos recientes. Asegúrate de que tus feeds se están sincronizando.",
+    "error": "Error al generar el briefing. Inténtalo de nuevo."
   },
   "digest": {
     "button": "Digest IA",
@@ -144,8 +178,18 @@
     "importDescription": "Importa tus suscripciones desde Feedly u otro lector vía OPML.",
     "languageTitle": "Idioma",
     "languageDescription": "Cambia el idioma de la interfaz.",
+    "statsTitle": "Estadísticas de lectura",
     "pushTitle": "Notificaciones push",
-    "pushDescription": "Recibe avisos cuando lleguen artículos nuevos con puntuación alta."
+    "pushDescription": "Recibe avisos cuando lleguen artículos nuevos con puntuación alta.",
+    "rescoreTitle": "Re-puntuar artículos",
+    "rescoreDescription": "Re-puntúa tus artículos no leídos con los intereses que tienes guardados ahora.",
+    "rescoreButton": "Re-puntuar ahora",
+    "rescoring": "Puntuando…",
+    "rescoreSuccess": "{scored} artículos re-puntuados",
+    "rescoreRemaining": " · {remaining} más en el próximo cron",
+    "rescoreNone": "No hay artículos no leídos",
+    "rescoreNoInterests": "Guarda tus intereses primero",
+    "rescoreError": "Error al re-puntuar"
   },
   "diagnostics": {
     "loading": "Cargando diagnóstico…",
@@ -168,7 +212,20 @@
     "lessThan1min": "hace menos de 1 min",
     "minutes": "hace {m} min",
     "hours": "hace {h}h",
-    "days": "hace {d}d"
+    "days": "hace {d}d",
+    "masterSchedule": "Cron horario",
+    "scheduleActive": "Activo",
+    "scheduleInactive": "Inactivo",
+    "masterScheduleHint": "No hay schedule de dispatch — actívalo para habilitar las actualizaciones automáticas.",
+    "activate": "Activar",
+    "reschedule": "Reiniciar",
+    "scheduleActivated": "Cron horario activado",
+    "rescheduleError": "Error al activar el schedule",
+    "manualDispatch": "Forzar sincronización",
+    "dispatchNow": "Sincronizar ahora",
+    "dispatching": "Despachando…",
+    "dispatchOk": "Encolados {dispatched}/{total} feeds — los artículos aparecerán en unos minutos",
+    "dispatchError": "Error al despachar los trabajos"
   },
   "sync": {
     "noFeeds": "No hay feeds para sincronizar",
@@ -182,7 +239,14 @@
   "saved": {
     "title": "Artículos guardados",
     "empty": "No tienes artículos guardados",
-    "emptyHint": "Toca el icono de marcador en cualquier artículo para guardarlo aquí."
+    "emptyHint": "Toca el icono de marcador en cualquier artículo para guardarlo aquí.",
+    "addNote": "Añadir nota…",
+    "notePlaceholder": "Tu nota…",
+    "noteSaving": "Guardando…",
+    "noteSaved": "Guardado automáticamente",
+    "loadMore": "Cargar más",
+    "loadingMore": "Cargando…",
+    "allLoaded": "{count} artículos guardados"
   },
   "language": {
     "es": "Español",
@@ -197,6 +261,17 @@
     "articles": "artículos",
     "last7days": "Últimos 7 días",
     "topSources": "Fuentes favoritas"
+  },
+  "trending": {
+    "title": "Tendencias esta semana"
+  },
+  "chat": {
+    "scopeAll": "Todos los feeds",
+    "locale": "es",
+    "emptyTitle": "Chat con tus artículos",
+    "emptyHint": "Haz preguntas sobre tus feeds de los últimos 14 días. Puedes enfocarte en un feed o carpeta concretos.",
+    "placeholder": "Pregunta algo sobre tus artículos…",
+    "error": "Error al obtener respuesta. Inténtalo de nuevo."
   },
   "push": {
     "enable": "Activar notificaciones",

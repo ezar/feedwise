@@ -1,21 +1,26 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Share2, Copy, Check, MessageCircle, ExternalLink } from 'lucide-react'
+import { Share2, Copy, Check, MessageCircle, ExternalLink, Sparkles, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTranslations } from 'next-intl'
 
 interface ShareButtonProps {
+  articleId: string
   title: string
   url: string
   summary?: string | null
 }
 
-export function ShareButton({ title, url, summary }: ShareButtonProps) {
+export function ShareButton({ articleId, title, url, summary: initialSummary }: ShareButtonProps) {
   const t = useTranslations('share')
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState<'link' | 'text' | null>(null)
+  const [summary, setSummary] = useState(initialSummary ?? null)
+  const [loading, setLoading] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => { setSummary(initialSummary ?? null) }, [initialSummary])
 
   useEffect(() => {
     if (!open) return
@@ -25,6 +30,37 @@ export function ShareButton({ title, url, summary }: ShareButtonProps) {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
+
+  // On mobile, native share is available — use it directly (no dropdown)
+  const hasNativeShare = typeof window !== 'undefined' && typeof navigator.share === 'function'
+
+  const fetchSummary = async (): Promise<string | null> => {
+    if (summary) return summary
+    try {
+      const res = await fetch(`/api/articles/${articleId}/summarize`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      if (res.ok) {
+        const data = await res.json() as { summary?: string }
+        if (data.summary) { setSummary(data.summary); return data.summary }
+      }
+    } catch { /* silent */ }
+    return null
+  }
+
+  // Mobile: single tap → native share sheet (no dropdown)
+  const handleNativeShare = async () => {
+    setLoading(true)
+    const text = await fetchSummary()
+    try {
+      await navigator.share({ title, text: text ?? undefined, url })
+    } catch {
+      // User cancelled or share failed — ignore
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const shareText = summary ? `${title}\n\n${summary}\n\n${url}` : `${title}\n\n${url}`
 
@@ -40,6 +76,12 @@ export function ShareButton({ title, url, summary }: ShareButtonProps) {
     setTimeout(() => { setCopied(null); setOpen(false) }, 1500)
   }
 
+  const generateSummary = async () => {
+    setLoading(true)
+    await fetchSummary()
+    setLoading(false)
+  }
+
   const openWhatsApp = () => {
     window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank', 'noopener')
     setOpen(false)
@@ -50,15 +92,26 @@ export function ShareButton({ title, url, summary }: ShareButtonProps) {
     setOpen(false)
   }
 
-  const nativeShare = async () => {
-    if (typeof navigator.share === 'function') {
-      await navigator.share({ title, text: summary ?? undefined, url })
-      setOpen(false)
-    }
+  // Mobile: direct native share, no dropdown
+  if (hasNativeShare) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 shrink-0"
+        onClick={handleNativeShare}
+        disabled={loading}
+        title={t('button')}
+      >
+        {loading
+          ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          : <Share2 className="h-4 w-4 text-muted-foreground" />
+        }
+      </Button>
+    )
   }
 
-  const hasNativeShare = typeof window !== 'undefined' && typeof navigator.share === 'function'
-
+  // Desktop: dropdown with copy + social links
   return (
     <div ref={ref} className="relative">
       <Button
@@ -72,16 +125,7 @@ export function ShareButton({ title, url, summary }: ShareButtonProps) {
       </Button>
 
       {open && (
-        <div className="absolute right-0 top-9 z-20 w-44 rounded-lg border bg-background shadow-lg py-1 text-sm">
-          {hasNativeShare && (
-            <button
-              onClick={nativeShare}
-              className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted transition-colors"
-            >
-              <Share2 className="h-3.5 w-3.5 text-muted-foreground" />
-              {t('button')}
-            </button>
-          )}
+        <div className="absolute right-0 top-9 z-20 w-48 rounded-lg border bg-background shadow-lg py-1 text-sm">
           <button
             onClick={copyLink}
             className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted transition-colors"
@@ -89,13 +133,29 @@ export function ShareButton({ title, url, summary }: ShareButtonProps) {
             {copied === 'link' ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5 text-muted-foreground" />}
             {copied === 'link' ? t('copied') : t('copy')}
           </button>
-          <button
-            onClick={copyText}
-            className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted transition-colors"
-          >
-            {copied === 'text' ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5 text-muted-foreground" />}
-            {copied === 'text' ? t('copied') : t('copyText')}
-          </button>
+
+          {summary ? (
+            <button
+              onClick={copyText}
+              className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted transition-colors"
+            >
+              {copied === 'text' ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5 text-muted-foreground" />}
+              {copied === 'text' ? t('copied') : t('copyText')}
+            </button>
+          ) : (
+            <button
+              onClick={generateSummary}
+              disabled={loading}
+              className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted transition-colors disabled:opacity-60"
+            >
+              {loading
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                : <Sparkles className="h-3.5 w-3.5 text-purple-500" />
+              }
+              {loading ? t('summarizing') : t('summarize')}
+            </button>
+          )}
+
           <div className="h-px bg-border mx-3 my-1" />
           <button
             onClick={openWhatsApp}

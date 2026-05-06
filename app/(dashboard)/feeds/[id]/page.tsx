@@ -26,15 +26,26 @@ export default async function FeedDetailPage({
 
   if (!feed) notFound()
 
-  const { data: articles } = await supabase
-    .from('articles')
-    .select('*, feeds(title)')
-    .eq('feed_id', params.id)
-    .order('published_at', { ascending: false })
-    .limit(40)
+  const [{ data: articles }, { count: totalCount }, { count: pendingCount }] = await Promise.all([
+    supabase
+      .from('articles')
+      .select('id,title,url,description,published_at,relevance_score,ai_summary,is_read,is_saved,tags,note,feed_id,feeds(title)')
+      .eq('feed_id', params.id)
+      .order('published_at', { ascending: false })
+      .limit(100),
+    supabase
+      .from('articles')
+      .select('*', { count: 'exact', head: true })
+      .eq('feed_id', params.id),
+    supabase
+      .from('articles')
+      .select('*', { count: 'exact', head: true })
+      .eq('feed_id', params.id)
+      .eq('ai_processed', false),
+  ])
 
-  const total = articles?.length ?? 0
-  const pending = articles?.filter((a) => !a.ai_processed).length ?? 0
+  const total = totalCount ?? 0
+  const pending = pendingCount ?? 0
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -106,9 +117,7 @@ export default async function FeedDetailPage({
       </div>
 
       <HomeFeed
-        initialArticles={articles ?? []}
-        threshold={0}
-        hasInterests={false}
+        initialArticles={(articles ?? []).map((a) => ({ ...a, feeds: Array.isArray(a.feeds) ? (a.feeds[0] ?? null) : a.feeds }))}
         feedId={params.id}
       />
     </div>

@@ -1,11 +1,34 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Newspaper, CheckCheck, ArrowDown } from 'lucide-react'
+import { Loader2, Newspaper, CheckCheck, ArrowDown, LayoutList, LayoutGrid, Copy, ChevronUp, Search, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { ArticleCard } from './ArticleCard'
+import { ArticleRow } from './ArticleRow'
+import { ReaderModal } from './ReaderModal'
+import { SwipeableArticle } from './SwipeableArticle'
+import { ShortcutsModal } from './ShortcutsModal'
+import { groupDuplicates } from '@/lib/dedup'
+import { TrendingTopics } from './TrendingTopics'
 import { cn } from '@/lib/utils'
+
+type ViewMode = 'card' | 'compact'
+type DateBucket = 'today' | 'yesterday' | 'thisWeek' | 'older'
+type DateFilter = 'all' | 'today' | 'week'
+
+function getDateBucket(dateStr: string | null | undefined): DateBucket {
+  if (!dateStr) return 'older'
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const articleDay = new Date(dateStr)
+  articleDay.setHours(0, 0, 0, 0)
+  const diffDays = Math.round((today.getTime() - articleDay.getTime()) / 86_400_000)
+  if (diffDays === 0) return 'today'
+  if (diffDays === 1) return 'yesterday'
+  if (diffDays <= 7) return 'thisWeek'
+  return 'older'
+}
 
 interface Article {
   id: string
@@ -17,29 +40,88 @@ interface Article {
   ai_summary?: string | null
   is_read: boolean
   is_saved: boolean
+  tags?: string[] | null
   feeds?: { title?: string | null } | null
 }
 
 interface HomeFeedProps {
   initialArticles: Article[]
-  threshold: number
-  hasInterests: boolean
   feedId?: string
 }
 
-const PAGE_SIZE = 40
+const INITIAL_SIZE = 100
 const PULL_THRESHOLD = 72   // px to trigger refresh
 const STALE_MS = 5 * 60 * 1000 // auto-refresh after 5 min hidden
 
-export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: HomeFeedProps) {
+export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
   const t = useTranslations('feed')
   const router = useRouter()
 
   const [articles, setArticles] = useState<Article[]>(initialArticles)
   const [loadingMore, setLoadingMore] = useState(false)
-  const [hasMore, setHasMore] = useState(initialArticles.length === PAGE_SIZE)
-  const [filter, setFilter] = useState<'all' | 'unread'>('all')
-  const [unreadSnapshot, setUnreadSnapshot] = useState<Set<string>>(new Set())
+  const [hasMore, setHasMore] = useState(initialArticles.length >= INITIAL_SIZE)
+  const [filter, setFilter] = useState<'all' | 'unread'>('unread')
+  const initialUnread = initialArticles.filter((a) => !a.is_read)
+  const [unreadSnapshot, setUnreadSnapshot] = useState<Set<string>>(
+    () => new Set(initialUnread.map((a) => a.id))
+  )
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window === 'undefined') return 'card'
+    return (localStorage.getItem('feedwise-view') as ViewMode) ?? 'card'
+  })
+  const [dedupEnabled, setDedupEnabled] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return localStorage.getItem('feedwise-dedup') !== 'false'
+  })
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
+  const [search, setSearch] = useState('')
+  const [searchResults, setSearchResults] = useState<Article[] | null>(null)
+  const [searching, setSearching] = useState(false)
+  const [activeTag, setActiveTag] = useState<string | null>(null)
+  const [showShortcuts, setShowShortcuts] = useState(false)
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all')
+  const [focusedIdx, setFocusedIdx] = useState(-1)
+  const [readerOpenId, setReaderOpenId] = useState<string | null>(null)
+  const focusedIdxRef = useRef(-1)
+  const searchAbortRef = useRef<AbortController | null>(null)
+
+  const toggleCard = (id: string) =>
+    setExpandedCards((prev) => {
+      const next = new Set(Array.from(prev))
+      if (next.has(id)) { next.delete(id) } else { next.add(id) }
+      return next
+    })
+
+  // Debounced DB search
+  useEffect(() => {
+    const q = search.trim()
+    if (q.length < 2) {
+      setSearchResults(null)
+      setSearching(false)
+      return
+    }
+    setSearching(true)
+    const timer = setTimeout(async () => {
+      searchAbortRef.current?.abort()
+      const controller = new AbortController()
+      searchAbortRef.current = controller
+      try {
+        const res = await fetch(`/api/articles/search?q=${encodeURIComponent(q)}`, {
+          credentials: 'include',
+          signal: controller.signal,
+        })
+        if (!res.ok) throw new Error()
+        const data = await res.json() as { articles?: Article[] }
+        setSearchResults(data.articles ?? [])
+      } catch (e) {
+        if ((e as Error).name !== 'AbortError') setSearchResults([])
+      } finally {
+        setSearching(false)
+      }
+    }, 350)
+    return () => clearTimeout(timer)
+  }, [search])
 
   // Pull-to-refresh state
   const [pullDist, setPullDist] = useState(0)
@@ -49,17 +131,21 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
 
   const sentinelRef = useRef<HTMLDivElement>(null)
   const loadingMoreRef = useRef(false)
-  const hasMoreRef = useRef(initialArticles.length === PAGE_SIZE)
-  const pageRef = useRef(1)
+  const hasMoreRef = useRef(initialArticles.length >= INITIAL_SIZE)
+  // Default filter is unread, so initial offset for load-more is the count of unread we already have
+  const offsetRef = useRef(initialUnread.length)
   const articleEls = useRef<Map<string, HTMLDivElement>>(new Map())
 
   // Sync when server refreshes (router.refresh() causes new initialArticles prop)
   useEffect(() => {
+    const newUnread = initialArticles.filter((a) => !a.is_read)
     setArticles(initialArticles)
     setRefreshing(false)
-    pageRef.current = 1
-    hasMoreRef.current = initialArticles.length === PAGE_SIZE
-    setHasMore(initialArticles.length === PAGE_SIZE)
+    // Always refresh snapshot so new articles after a feed update appear immediately
+    setUnreadSnapshot(new Set(newUnread.map((a) => a.id)))
+    offsetRef.current = newUnread.length
+    hasMoreRef.current = initialArticles.length >= INITIAL_SIZE
+    setHasMore(initialArticles.length >= INITIAL_SIZE)
   }, [initialArticles])
 
   // Auto-refresh: if tab was hidden for 5+ min, refresh on focus
@@ -77,7 +163,22 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
     return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [router])
 
-  // Mark-as-read: scroll event checks which articles passed above viewport
+  // Mark-as-read: accumulate IDs scrolled past and flush in a single batch request
+  const readQueueRef = useRef<Set<string>>(new Set())
+  const readFlushTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const flushReadQueue = useCallback(() => {
+    const ids = Array.from(readQueueRef.current)
+    if (!ids.length) return
+    readQueueRef.current = new Set()
+    fetch('/api/articles/mark-read', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    })
+  }, [])
+
   useEffect(() => {
     let rafId: number | null = null
     const check = () => {
@@ -88,12 +189,10 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
           setArticles((prev) =>
             prev.map((a) => (a.id === id && !a.is_read ? { ...a, is_read: true } : a))
           )
-          fetch(`/api/articles/${id}`, {
-            method: 'PATCH',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ is_read: true }),
-          })
+          readQueueRef.current.add(id)
+          // Debounce: flush 1s after last article scrolled past
+          if (readFlushTimer.current) clearTimeout(readFlushTimer.current)
+          readFlushTimer.current = setTimeout(flushReadQueue, 1000)
         }
       })
     }
@@ -105,8 +204,11 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
     return () => {
       window.removeEventListener('scroll', onScroll)
       if (rafId !== null) cancelAnimationFrame(rafId)
+      // Flush any pending on unmount
+      if (readFlushTimer.current) clearTimeout(readFlushTimer.current)
+      flushReadQueue()
     }
-  }, [])
+  }, [flushReadQueue])
 
   const attachReadRef = useCallback((el: HTMLDivElement | null, id: string) => {
     if (el) articleEls.current.set(id, el)
@@ -152,17 +254,23 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
     loadingMoreRef.current = true
     setLoadingMore(true)
     try {
-      const nextPage = pageRef.current + 1
       const feedParam = feedId ? `&feed_id=${feedId}` : ''
-      const res = await fetch(`/api/articles?page=${nextPage}${feedParam}`, { credentials: 'include' })
+      const unreadParam = filter === 'unread' ? '&unread=true' : ''
+      const res = await fetch(`/api/articles?offset=${offsetRef.current}${feedParam}${unreadParam}`, { credentials: 'include' })
       if (!res.ok) { hasMoreRef.current = false; setHasMore(false); return }
-      const data = await res.json() as { articles?: Article[] }
+      const data = await res.json() as { articles?: Article[]; hasMore?: boolean }
       const next = data.articles ?? []
-      setArticles((prev) => [...prev, ...next])
-      pageRef.current = nextPage
-      const more = next.length === PAGE_SIZE
-      hasMoreRef.current = more
-      setHasMore(more)
+      setArticles((prev) => {
+        const existingIds = new Set(prev.map((a) => a.id))
+        return [...prev, ...next.filter((a) => !existingIds.has(a.id))]
+      })
+      // Add newly fetched unread articles to the snapshot so they appear in the filtered view
+      if (filter === 'unread') {
+        setUnreadSnapshot((prev) => new Set(Array.from(prev).concat(next.map((a) => a.id))))
+      }
+      offsetRef.current += next.length
+      hasMoreRef.current = data.hasMore ?? false
+      setHasMore(data.hasMore ?? false)
     } catch {
       hasMoreRef.current = false
       setHasMore(false)
@@ -170,23 +278,49 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
       loadingMoreRef.current = false
       setLoadingMore(false)
     }
-  }, [feedId])
+  }, [feedId, filter])
+
+  // Mark all articles still tracked in articleEls (visible, not yet scrolled past) as read
+  const markAllVisibleRead = useCallback(() => {
+    if (!articleEls.current.size) return
+    const ids = Array.from(articleEls.current.keys())
+    ids.forEach((id) => articleEls.current.delete(id))
+    setArticles((prev) =>
+      prev.map((a) => (ids.includes(a.id) && !a.is_read ? { ...a, is_read: true } : a))
+    )
+    ids.forEach((id) =>
+      fetch(`/api/articles/${id}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_read: true }),
+      })
+    )
+  }, [])
 
   useEffect(() => {
     const sentinel = sentinelRef.current
     if (!sentinel) return
     const observer = new IntersectionObserver(
-      (entries) => { if (entries[0].isIntersecting) void loadMore() },
+      (entries) => {
+        if (!entries[0].isIntersecting) return
+        if (hasMoreRef.current) {
+          void loadMore()
+        } else {
+          markAllVisibleRead()
+        }
+      },
       { rootMargin: '200px' }
     )
     observer.observe(sentinel)
     return () => observer.disconnect()
-  }, [loadMore])
+  }, [loadMore, markAllVisibleRead])
 
   // Mark all as read
   const handleMarkAllRead = useCallback(async () => {
     const feedParam = feedId ? `?feed_id=${feedId}` : ''
     setArticles((prev) => prev.map((a) => ({ ...a, is_read: true })))
+    setUnreadSnapshot(new Set())
     await fetch(`/api/articles/read-all${feedParam}`, { method: 'POST', credentials: 'include' })
   }, [feedId])
 
@@ -199,9 +333,137 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
   }, [])
 
   const unreadCount = articles.filter((a) => !a.is_read).length
-  const visible = filter === 'unread'
-    ? articles.filter((a) => unreadSnapshot.has(a.id))
-    : articles
+  const visible = useMemo(() => {
+    let result = filter === 'unread'
+      ? articles.filter((a) => unreadSnapshot.has(a.id))
+      : articles
+    if (dateFilter === 'today') {
+      result = result.filter((a) => getDateBucket(a.published_at) === 'today')
+    } else if (dateFilter === 'week') {
+      result = result.filter((a) => getDateBucket(a.published_at) !== 'older')
+    }
+    return result
+  }, [articles, filter, unreadSnapshot, dateFilter])
+
+  const activeArticles = useMemo(() => {
+    let result = searchResults ?? visible
+    if (activeTag) result = result.filter((a) => a.tags?.includes(activeTag))
+    return result
+  }, [searchResults, visible, activeTag])
+
+  const availableTags = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const a of visible) {
+      for (const tag of (a.tags ?? [])) counts.set(tag, (counts.get(tag) ?? 0) + 1)
+    }
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([tag]) => tag)
+  }, [visible])
+
+  const groups = useMemo(
+    () => dedupEnabled
+      ? groupDuplicates(activeArticles)
+      : activeArticles.map((a) => ({ main: a, dupes: [] as Article[] })),
+    [activeArticles, dedupEnabled]
+  )
+
+  const dedupedCount = visible.length - groups.filter((g) => g.dupes.length > 0).reduce((acc, g) => acc + g.dupes.length, 0)
+
+  // Flat main articles for keyboard nav
+  const mainArticlesRef = useRef<Article[]>([])
+
+  const DATE_BUCKET_ORDER: DateBucket[] = ['today', 'yesterday', 'thisWeek', 'older']
+  const dateGrouped = useMemo(() => {
+    const map = new Map<DateBucket, typeof groups>()
+    for (const group of groups) {
+      const bucket = getDateBucket(group.main.published_at)
+      if (!map.has(bucket)) map.set(bucket, [])
+      map.get(bucket)!.push(group)
+    }
+    return DATE_BUCKET_ORDER.filter((b) => map.has(b)).map((b) => ({ bucket: b, groups: map.get(b)! }))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groups])
+
+  const flatIndexMap = useMemo(() => {
+    const map = new Map<string, number>()
+    let i = 0
+    for (const { groups: g } of dateGrouped) {
+      for (const { main } of g) map.set(main.id, i++)
+    }
+    return map
+  }, [dateGrouped])
+
+  // Keep flat article list + focused index refs in sync
+  useEffect(() => {
+    mainArticlesRef.current = dateGrouped.flatMap(({ groups: g }) => g.map(({ main }) => main))
+  }, [dateGrouped])
+  useEffect(() => { focusedIdxRef.current = focusedIdx }, [focusedIdx])
+
+  // Keyboard navigation
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      const list = mainArticlesRef.current
+      const idx = focusedIdxRef.current
+      switch (e.key) {
+        case '?':
+          setShowShortcuts(true)
+          break
+        case 'j': {
+          e.preventDefault()
+          const next = Math.min(idx + 1, list.length - 1)
+          setFocusedIdx(next)
+          const el = articleEls.current.get(list[next]?.id ?? '')
+          el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+          break
+        }
+        case 'k': {
+          e.preventDefault()
+          const next = Math.max(idx - 1, 0)
+          setFocusedIdx(next)
+          const el = articleEls.current.get(list[next]?.id ?? '')
+          el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+          break
+        }
+        case 'o':
+          if (idx >= 0 && list[idx]) window.open(list[idx].url, '_blank', 'noopener,noreferrer')
+          break
+        case 's': {
+          if (idx >= 0 && list[idx]) {
+            const a = list[idx]
+            const next = !a.is_saved
+            handleSaveToggle(a.id, next)
+            fetch(`/api/articles/${a.id}`, {
+              method: 'PATCH', credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ is_saved: next }),
+            })
+          }
+          break
+        }
+        case 'm': {
+          if (idx >= 0 && list[idx]) {
+            const a = list[idx]
+            handleMarkRead(a.id)
+            fetch(`/api/articles/${a.id}`, {
+              method: 'PATCH', credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ is_read: true }),
+            })
+          }
+          break
+        }
+        case 'r': {
+          if (idx >= 0 && list[idx]) {
+            e.preventDefault()
+            setReaderOpenId(list[idx].id)
+          }
+          break
+        }
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [handleSaveToggle, handleMarkRead])
 
   // Pull indicator: show above the feed when user is pulling down
   const showPullIndicator = pullDist > 8 || refreshing
@@ -213,12 +475,8 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
         <div className="rounded-full bg-muted p-4">
           <Newspaper className="h-8 w-8 text-muted-foreground" />
         </div>
-        <p className="font-medium">
-          {hasInterests ? t('noRelevant') : t('noArticles')}
-        </p>
-        <p className="text-sm text-muted-foreground max-w-xs">
-          {hasInterests ? t('noRelevantHint', { threshold }) : t('noArticlesHint')}
-        </p>
+        <p className="font-medium">{t('noArticles')}</p>
+        <p className="text-sm text-muted-foreground max-w-xs">{t('noArticlesHint')}</p>
       </div>
     )
   }
@@ -239,12 +497,112 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
         </div>
       )}
 
-      {/* Filter bar */}
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-xs text-muted-foreground shrink-0">
-          {unreadCount > 0 ? t('unread', { count: unreadCount }) : t('allRead')}
-          {' · '}{t('loaded', { count: articles.length })}
+      {/* Search bar */}
+      <div className="relative">
+        {searching
+          ? <Loader2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground animate-spin pointer-events-none" />
+          : <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+        }
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('search')}
+          className="w-full pl-8 pr-8 py-1.5 text-sm bg-muted/50 border rounded-md outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/60"
+        />
+        {search && (
+          <button
+            onClick={() => { setSearch(''); setSearchResults(null) }}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+      {searchResults !== null && !searching && (
+        <p className="text-xs text-muted-foreground -mt-1 px-0.5">
+          {searchResults.length === 0
+            ? t('searchNoResults')
+            : t('searchResultCount', { count: searchResults.length })}
         </p>
+      )}
+
+      {/* Trending topics — only shown on main feed, no search/folder active */}
+      {!feedId && !search && (
+        <TrendingTopics
+          onTagClick={(tag) => setActiveTag(activeTag === tag ? null : tag)}
+          activeTag={activeTag}
+        />
+      )}
+
+      {/* Tag filter chips */}
+      {availableTags.length > 0 && (
+        <div className="flex gap-1.5 flex-wrap -mt-1">
+          {availableTags.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+              className={cn(
+                'text-[11px] px-2 py-0.5 rounded-full border transition-colors',
+                activeTag === tag
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
+              )}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {showShortcuts && <ShortcutsModal onClose={() => setShowShortcuts(false)} />}
+
+      {/* Reader modal for compact-view rows (no ArticleCard mounted) */}
+      {viewMode === 'compact' && readerOpenId && (() => {
+        const art = articles.find((a) => a.id === readerOpenId)
+        if (!art) return null
+        return (
+          <ReaderModal
+            url={art.url ?? ''}
+            title={art.title ?? ''}
+            articleId={art.id}
+            fallbackSummary={art.ai_summary ?? art.description ?? undefined}
+            onClose={() => setReaderOpenId(null)}
+          />
+        )
+      })()}
+
+      {/* Date filter chips */}
+      <div className="flex gap-1.5">
+        {(['all', 'today', 'week'] as DateFilter[]).map((f) => (
+          <button
+            key={f}
+            onClick={() => setDateFilter(f)}
+            className={cn(
+              'text-xs px-2.5 py-1 rounded-full border transition-colors',
+              dateFilter === f
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
+            )}
+          >
+            {t(f === 'all' ? 'dateAll' : f === 'today' ? 'dateToday' : 'dateWeek')}
+          </button>
+        ))}
+      </div>
+
+      {/* Filter bar */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex flex-col shrink-0">
+          <p className="text-xs text-muted-foreground">
+            {unreadCount > 0 ? t('unread', { count: unreadCount }) : t('allRead')}
+            {' · '}{t('loaded', { count: dedupEnabled ? dedupedCount : visible.length })}
+          </p>
+          {dedupEnabled && visible.length > dedupedCount && (
+            <span className="text-xs text-muted-foreground/60">
+              ({t('dupeHidden', { count: visible.length - dedupedCount })})
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           {unreadCount > 0 && (
             <button
@@ -256,9 +614,41 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
               <span className="hidden sm:inline">{t('markAllRead')}</span>
             </button>
           )}
+          <button
+            onClick={() => {
+              const next = !dedupEnabled
+              setDedupEnabled(next)
+              localStorage.setItem('feedwise-dedup', String(next))
+            }}
+            className={cn('transition-colors', dedupEnabled ? 'text-primary' : 'text-muted-foreground hover:text-foreground')}
+            title={dedupEnabled ? t('dedupOn') : t('dedupOff')}
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => {
+              const next: ViewMode = viewMode === 'card' ? 'compact' : 'card'
+              setViewMode(next)
+              localStorage.setItem('feedwise-view', next)
+            }}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            title={viewMode === 'card' ? t('viewCompact') : t('viewCard')}
+          >
+            {viewMode === 'card'
+              ? <LayoutList className="h-4 w-4" />
+              : <LayoutGrid className="h-4 w-4" />
+            }
+          </button>
           <div className="flex rounded-md border overflow-hidden text-xs">
             <button
-              onClick={() => { setFilter('all'); setUnreadSnapshot(new Set()) }}
+              onClick={() => {
+                setFilter('all')
+                setUnreadSnapshot(new Set())
+                // Offset for "all" = total articles already loaded
+                offsetRef.current = articles.length
+                hasMoreRef.current = true
+                setHasMore(true)
+              }}
               className={cn(
                 'px-3 py-1 transition-colors',
                 filter === 'all' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
@@ -268,8 +658,13 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
             </button>
             <button
               onClick={() => {
+                const unread = articles.filter((a) => !a.is_read)
                 setFilter('unread')
-                setUnreadSnapshot(new Set(articles.filter((a) => !a.is_read).map((a) => a.id)))
+                setUnreadSnapshot(new Set(unread.map((a) => a.id)))
+                // Offset for "unread" = count of unread articles already loaded
+                offsetRef.current = unread.length
+                hasMoreRef.current = true
+                setHasMore(true)
               }}
               className={cn(
                 'px-3 py-1 transition-colors border-l',
@@ -282,18 +677,107 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
         </div>
       </div>
 
-      {/* Article list */}
-      {visible.map((article) => (
-        <div
-          key={article.id}
-          data-id={article.id}
-          ref={(el) => attachReadRef(el, article.id)}
-        >
-          <ArticleCard
-            article={article}
-            onSaveToggle={handleSaveToggle}
-            onMarkRead={handleMarkRead}
-          />
+      {/* Article list grouped by date */}
+      {viewMode === 'compact' && dateGrouped.map(({ bucket, groups: bucketGroups }) => (
+        <div key={bucket}>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide px-1 pb-1 pt-2 first:pt-0">
+            {t(bucket)}
+          </p>
+          <div className="border rounded-lg overflow-hidden divide-y">
+            {bucketGroups.map(({ main, dupes }) => {
+              const isFocused = flatIndexMap.get(main.id) === focusedIdx && focusedIdx >= 0
+              return (
+                <div key={main.id} className={isFocused ? 'ring-2 ring-inset ring-primary/40' : ''}>
+                  <div ref={(el) => attachReadRef(el, main.id)}>
+                    {expandedCards.has(main.id) ? (
+                      <div>
+                        <button
+                          onClick={() => toggleCard(main.id)}
+                          className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-muted-foreground hover:text-foreground bg-muted/40 transition-colors border-b"
+                        >
+                          <ChevronUp className="h-3 w-3" />
+                          {t('collapse')}
+                        </button>
+                        <div className="p-2">
+                          <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} openReader={readerOpenId === main.id} onReaderClose={() => setReaderOpenId(null)} />
+                        </div>
+                      </div>
+                    ) : (
+                      <SwipeableArticle
+                        onSwipeLeft={() => { handleSaveToggle(main.id, !main.is_saved); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_saved: !main.is_saved }) }) }}
+                        onSwipeRight={() => { handleMarkRead(main.id); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_read: true }) }) }}
+                      >
+                        <ArticleRow article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => toggleCard(main.id)} onOpenReader={() => setReaderOpenId(main.id)} />
+                      </SwipeableArticle>
+                    )}
+                  </div>
+                  {dupes.length > 0 && !expandedGroups.has(main.id) && (
+                    <button
+                      onClick={() => setExpandedGroups((prev) => new Set(Array.from(prev).concat(main.id)))}
+                      className="w-full text-left px-3 py-1 text-[11px] text-muted-foreground/70 hover:text-muted-foreground bg-muted/30 transition-colors"
+                    >
+                      {t('dupesCollapsed', { count: dupes.length })}
+                    </button>
+                  )}
+                  {dupes.length > 0 && expandedGroups.has(main.id) && dupes.map((dupe) => (
+                    <div key={dupe.id} ref={(el) => attachReadRef(el, dupe.id)} className="opacity-60">
+                      {expandedCards.has(dupe.id) ? (
+                        <div>
+                          <button
+                            onClick={() => toggleCard(dupe.id)}
+                            className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-muted-foreground hover:text-foreground bg-muted/40 transition-colors border-b"
+                          >
+                            <ChevronUp className="h-3 w-3" />
+                            {t('collapse')}
+                          </button>
+                          <div className="p-2">
+                            <ArticleCard article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+                          </div>
+                        </div>
+                      ) : (
+                        <ArticleRow article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => toggleCard(dupe.id)} onOpenReader={() => setReaderOpenId(dupe.id)} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      ))}
+      {viewMode === 'card' && dateGrouped.map(({ bucket, groups: bucketGroups }) => (
+        <div key={bucket}>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide px-1 pb-1 pt-2 first:pt-0">
+            {t(bucket)}
+          </p>
+          {bucketGroups.map(({ main, dupes }) => {
+            const isFocused = flatIndexMap.get(main.id) === focusedIdx && focusedIdx >= 0
+            return (
+              <div key={main.id} className={isFocused ? 'ring-2 ring-primary/40 rounded-xl mb-0.5' : ''}>
+                <div ref={(el) => attachReadRef(el, main.id)}>
+                  <SwipeableArticle
+                    onSwipeLeft={() => { handleSaveToggle(main.id, !main.is_saved); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_saved: !main.is_saved }) }) }}
+                    onSwipeRight={() => { handleMarkRead(main.id); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_read: true }) }) }}
+                  >
+                    <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} openReader={readerOpenId === main.id} onReaderClose={() => setReaderOpenId(null)} />
+                  </SwipeableArticle>
+                </div>
+                {dupes.length > 0 && !expandedGroups.has(main.id) && (
+                  <button
+                    onClick={() => setExpandedGroups((prev) => new Set(Array.from(prev).concat(main.id)))}
+                    className="ml-4 mb-2 text-[11px] text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+                  >
+                    {t('dupesCollapsed', { count: dupes.length })}
+                  </button>
+                )}
+                {dupes.length > 0 && expandedGroups.has(main.id) && dupes.map((dupe) => (
+                  <div key={dupe.id} ref={(el) => attachReadRef(el, dupe.id)} className="opacity-60 scale-[0.98] origin-left">
+                    <ArticleCard article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} />
+                  </div>
+                ))}
+              </div>
+            )
+          })}
         </div>
       ))}
 
@@ -313,7 +797,7 @@ export function HomeFeed({ initialArticles, threshold, hasInterests, feedId }: H
         </div>
       )}
 
-      {!hasMore && articles.length > PAGE_SIZE && (
+      {!hasMore && articles.length >= INITIAL_SIZE && (
         <p className="text-xs text-muted-foreground text-center py-2">
           {t('reachedEnd', { count: articles.length })}
         </p>

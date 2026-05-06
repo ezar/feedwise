@@ -13,12 +13,13 @@ export async function POST() {
 
   const { data: profile } = await supabase
     .from('user_profile')
-    .select('interests')
+    .select('interests, locale')
     .eq('id', user.id)
     .single()
 
   const interests = profile?.interests?.trim()
   if (!interests) return Response.json({ error: 'no_interests' }, { status: 400 })
+  const locale = profile?.locale ?? 'es'
 
   // Count total unread so we can tell the user how many are pending
   const { count: totalUnread } = await supabase
@@ -42,10 +43,10 @@ export async function POST() {
     await Promise.all(
       batch.map(async (article) => {
         try {
-          const { score, summary } = await scoreArticle(article, interests)
+          const { score, summary, tags } = await scoreArticle(article, interests, locale)
           await supabase
             .from('articles')
-            .update({ relevance_score: score, ai_summary: summary, ai_processed: true })
+            .update({ relevance_score: score, ai_summary: summary, tags, ai_processed: true })
             .eq('id', article.id)
           scored++
         } catch {

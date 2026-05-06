@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { scheduleHourlyFetch } from '@/lib/qstash/scheduler'
+import { publishFeedJob } from '@/lib/qstash/scheduler'
+import { detectFeedUrl } from '@/lib/rss/detect'
 
 export async function GET() {
   const supabase = createClient()
@@ -27,9 +28,18 @@ export async function POST(req: Request) {
     feed_type?: string
     topic_query?: string
   }
-  const { url, title, feed_type = 'manual', topic_query } = body
+  const { title, feed_type = 'manual', topic_query } = body
+  let { url } = body
 
   if (!url) return Response.json({ error: 'url required' }, { status: 400 })
+
+  // Auto-detect RSS URL if user pasted a website URL instead of a feed URL
+  try {
+    url = await detectFeedUrl(url)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    return Response.json({ error: msg }, { status: 422 })
+  }
 
   const { data: feed, error } = await supabase
     .from('feeds')
@@ -39,18 +49,9 @@ export async function POST(req: Request) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
 
-  let scheduleWarning: string | undefined
-  try {
-    const scheduleId = await scheduleHourlyFetch(feed.id)
-    await supabase
-      .from('feeds')
-      .update({ qstash_schedule_id: scheduleId })
-      .eq('id', feed.id)
-    feed.qstash_schedule_id = scheduleId
-  } catch (err) {
-    console.error('Failed to schedule QStash job:', err)
-    scheduleWarning = 'Feed guardado pero no se pudo programar la actualización automática. Comprueba la configuración de QStash.'
-  }
+  publishFeedJob(feed.id as string).catch((err) =>
+    console.error('Failed to publish feed job:', err)
+  )
 
-  return Response.json({ feed, warning: scheduleWarning }, { status: 201 })
+  return Response.json({ feed }, { status: 201 })
 }

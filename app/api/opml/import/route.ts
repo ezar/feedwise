@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { scheduleHourlyFetch } from '@/lib/qstash/scheduler'
+import { publishFeedJob } from '@/lib/qstash/scheduler'
 
 interface OpmlFeed {
   title: string
@@ -63,15 +63,9 @@ export async function POST(req: Request) {
     }
 
     inserted.push(feed.url)
-    try {
-      const scheduleId = await scheduleHourlyFetch(data.id)
-      await supabase
-        .from('feeds')
-        .update({ qstash_schedule_id: scheduleId })
-        .eq('id', data.id)
-    } catch (err) {
-      console.error('Failed to schedule feed:', err)
-    }
+    publishFeedJob(data.id as string).catch((err) =>
+      console.error('Failed to publish feed job:', err)
+    )
   }
 
   return Response.json({ inserted: inserted.length, skipped: skipped.length })

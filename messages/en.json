@@ -4,7 +4,9 @@
     "feeds": "My feeds",
     "saved": "Saved",
     "settings": "Settings",
-    "stats": "Stats"
+    "stats": "Stats",
+    "briefing": "Briefing",
+    "chat": "Chat"
   },
   "auth": {
     "signInTitle": "Sign in to your account",
@@ -38,9 +40,28 @@
     "reachedEnd": "You've reached the end · {count} articles",
     "pullToRefresh": "Release to refresh",
     "pulling": "Pull to refresh",
-    "refreshing": "Refreshing…"
+    "refreshing": "Refreshing…",
+    "viewCompact": "Compact view",
+    "viewCard": "Card view",
+    "dedupOn": "Deduplication on — click to disable",
+    "dedupOff": "Deduplication off — click to enable",
+    "dupeHidden": "{count} similar hidden",
+    "dupesCollapsed": "+ {count} similar articles",
+    "collapse": "Collapse",
+    "search": "Search articles…",
+    "searchClear": "Clear",
+    "searchResultCount": "{count} results",
+    "searchNoResults": "No results found",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "thisWeek": "This week",
+    "older": "Older",
+    "dateAll": "All",
+    "dateToday": "Today",
+    "dateWeek": "This week"
   },
   "article": {
+    "reader": "Reader mode",
     "save": "Save article",
     "unsave": "Remove from saved",
     "saveError": "Error saving",
@@ -53,7 +74,20 @@
     "copyText": "Copy summary",
     "copied": "Copied!",
     "whatsapp": "WhatsApp",
-    "linkedin": "LinkedIn"
+    "linkedin": "LinkedIn",
+    "summarize": "Summarize with AI",
+    "summarizing": "Summarizing…"
+  },
+  "briefing": {
+    "title": "Daily Briefing",
+    "cta": "Generate today's briefing",
+    "ctaHint": "The AI reads your top 20 articles of the last 48h and writes a concise summary by topic.",
+    "generate": "Generate briefing",
+    "generating": "Generating your briefing…",
+    "regenerate": "Regenerate",
+    "basedOn": "Based on {count} articles from your feeds",
+    "noArticles": "No recent articles found. Make sure your feeds are syncing.",
+    "error": "Error generating the briefing. Try again."
   },
   "digest": {
     "button": "AI Digest",
@@ -144,8 +178,18 @@
     "importDescription": "Import your subscriptions from Feedly or another reader via OPML.",
     "languageTitle": "Language",
     "languageDescription": "Change the interface language.",
+    "statsTitle": "Reading stats",
     "pushTitle": "Push notifications",
-    "pushDescription": "Get notified when new high-score articles arrive."
+    "pushDescription": "Get notified when new high-score articles arrive.",
+    "rescoreTitle": "Re-score articles",
+    "rescoreDescription": "Re-scores your unread articles using your currently saved interests.",
+    "rescoreButton": "Re-score now",
+    "rescoring": "Scoring…",
+    "rescoreSuccess": "{scored} articles re-scored",
+    "rescoreRemaining": " · {remaining} more on next cron",
+    "rescoreNone": "No unread articles to score",
+    "rescoreNoInterests": "Save your interests first",
+    "rescoreError": "Error re-scoring"
   },
   "diagnostics": {
     "loading": "Loading diagnostics…",
@@ -168,7 +212,20 @@
     "lessThan1min": "less than 1 min ago",
     "minutes": "{m} min ago",
     "hours": "{h}h ago",
-    "days": "{d}d ago"
+    "days": "{d}d ago",
+    "masterSchedule": "Hourly cron",
+    "scheduleActive": "Active",
+    "scheduleInactive": "Inactive",
+    "masterScheduleHint": "No dispatch schedule found — activate it to enable automatic feed updates.",
+    "activate": "Activate",
+    "reschedule": "Reset",
+    "scheduleActivated": "Hourly cron activated",
+    "rescheduleError": "Error activating schedule",
+    "manualDispatch": "Force sync now",
+    "dispatchNow": "Sync now",
+    "dispatching": "Dispatching…",
+    "dispatchOk": "Queued {dispatched}/{total} feeds — articles will appear in a few minutes",
+    "dispatchError": "Failed to dispatch jobs"
   },
   "sync": {
     "noFeeds": "No feeds to sync",
@@ -182,7 +239,14 @@
   "saved": {
     "title": "Saved articles",
     "empty": "No saved articles",
-    "emptyHint": "Tap the bookmark icon on any article to save it here."
+    "emptyHint": "Tap the bookmark icon on any article to save it here.",
+    "addNote": "Add note…",
+    "notePlaceholder": "Your note…",
+    "noteSaving": "Saving…",
+    "noteSaved": "Saved automatically",
+    "loadMore": "Load more",
+    "loadingMore": "Loading…",
+    "allLoaded": "{count} saved articles"
   },
   "language": {
     "es": "Español",
@@ -197,6 +261,17 @@
     "articles": "articles",
     "last7days": "Last 7 days",
     "topSources": "Favourite sources"
+  },
+  "trending": {
+    "title": "Trending this week"
+  },
+  "chat": {
+    "scopeAll": "All feeds",
+    "locale": "en",
+    "emptyTitle": "Chat with your articles",
+    "emptyHint": "Ask questions about your feeds from the last 14 days. You can focus on a specific feed or folder.",
+    "placeholder": "Ask something about your articles…",
+    "error": "Error getting response. Try again."
   },
   "push": {
     "enable": "Enable notifications",

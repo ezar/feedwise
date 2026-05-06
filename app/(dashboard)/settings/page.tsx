@@ -5,6 +5,7 @@ import { SyncAllButton } from '@/components/settings/SyncAllButton'
 import { DiagnosticsPanel } from '@/components/settings/DiagnosticsPanel'
 import { LocaleSwitcher } from '@/components/settings/LocaleSwitcher'
 import { PushNotifications } from '@/components/settings/PushNotifications'
+import { ReadingStats } from '@/components/stats/ReadingStats'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { getTranslations } from 'next-intl/server'
 
@@ -86,6 +87,15 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           <LocaleSwitcher />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{t('statsTitle')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ReadingStats />
         </CardContent>
       </Card>
 

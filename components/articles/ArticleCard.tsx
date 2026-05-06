@@ -1,14 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { Bookmark, BookmarkCheck, ExternalLink, Sparkles } from 'lucide-react'
+import { Bookmark, BookmarkCheck, ExternalLink, Sparkles, BookOpen } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ShareButton } from './ShareButton'
+import { ReaderModal } from './ReaderModal'
 import { useToast } from '@/components/providers/ToastProvider'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { cn } from '@/lib/utils'
+import { timeAgo } from '@/lib/timeAgo'
 
 interface Article {
   id: string
@@ -20,6 +22,7 @@ interface Article {
   ai_summary?: string | null
   is_read: boolean
   is_saved: boolean
+  tags?: string[] | null
   feeds?: { title?: string | null } | null
 }
 
@@ -27,6 +30,8 @@ interface ArticleCardProps {
   article: Article
   onSaveToggle?: (id: string, saved: boolean) => void
   onMarkRead?: (id: string) => void
+  openReader?: boolean
+  onReaderClose?: () => void
 }
 
 function scoreColor(score: number) {
@@ -41,11 +46,13 @@ function scoreBarColor(score: number) {
   return 'bg-red-400'
 }
 
-export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardProps) {
+export function ArticleCard({ article, onSaveToggle, onMarkRead, openReader: externalOpen, onReaderClose }: ArticleCardProps) {
   const [saved, setSaved] = useState(article.is_saved)
-  const [read, setRead] = useState(article.is_read)
+  const [internalReaderOpen, setInternalReaderOpen] = useState(false)
+  const readerOpen = internalReaderOpen || !!externalOpen
   const { toast } = useToast()
   const t = useTranslations('article')
+  const locale = useLocale()
 
   const handleSave = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -67,8 +74,7 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
   }
 
   const handleClick = () => {
-    if (!read) {
-      setRead(true)
+    if (!article.is_read) {
       onMarkRead?.(article.id)
       fetch(`/api/articles/${article.id}`, {
         credentials: 'include',
@@ -79,17 +85,22 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
     }
   }
 
-  const pubDate = article.published_at
-    ? new Date(article.published_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-    : null
+  const pubDate = timeAgo(article.published_at, locale)
 
-  const snippet = article.ai_summary
-    ?? (article.description ? article.description.replace(/<[^>]*>/g, '').trim() : null)
+  const rawDescription = article.description
+    ? article.description.replace(/<[^>]*>/g, '').trim()
+    : null
+  const titlePrefix = article.title.slice(0, 40).toLowerCase()
+  const descriptionIsDupe = rawDescription
+    ? rawDescription.toLowerCase().startsWith(titlePrefix) || rawDescription.length < 30
+    : true
+  const snippet = article.ai_summary ?? (descriptionIsDupe ? null : rawDescription)
 
   const score = article.relevance_score
 
   return (
-    <Card className={cn('transition-all duration-200 hover:shadow-md', read && 'opacity-60')}>
+    <>
+    <Card className={cn('transition-all duration-200 hover:shadow-md', article.is_read && 'opacity-60')}>
       <CardContent className="p-4 flex flex-col gap-2.5">
         {/* Title row */}
         <div className="flex items-start justify-between gap-2">
@@ -104,7 +115,16 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
             <ExternalLink className="inline ml-1 h-3 w-3 opacity-0 group-hover:opacity-40 transition-opacity" />
           </a>
           <div className="flex items-center shrink-0 mt-0.5">
-            <ShareButton title={article.title} url={article.url} summary={article.ai_summary} />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={(e) => { e.preventDefault(); setInternalReaderOpen(true) }}
+              title={t('reader')}
+            >
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
+            </Button>
+            <ShareButton articleId={article.id} title={article.title} url={article.url} summary={article.ai_summary} />
             <Button
               variant="ghost"
               size="icon"
@@ -122,12 +142,17 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
 
         {/* Snippet */}
         {snippet && (
-          <p className={cn(
-            'text-xs text-muted-foreground leading-relaxed line-clamp-2',
-            article.ai_summary && 'italic'
-          )}>
-            {snippet}
-          </p>
+          <div className="flex items-start gap-1">
+            {article.ai_summary && (
+              <Sparkles className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+            )}
+            <p className={cn(
+              'text-xs text-muted-foreground leading-relaxed line-clamp-2',
+              article.ai_summary && 'italic'
+            )}>
+              {snippet}
+            </p>
+          </div>
         )}
 
         {/* AI score bar */}
@@ -146,18 +171,34 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead }: ArticleCardPr
           </div>
         )}
 
-        {/* Meta */}
+        {/* Meta + tags */}
         <div className="flex items-center gap-2 flex-wrap">
           {article.feeds?.title && (
             <Badge variant="secondary" className="text-xs font-normal">
               {article.feeds.title}
             </Badge>
           )}
+          {article.tags?.map((tag) => (
+            <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+              {tag}
+            </span>
+          ))}
           {pubDate && (
             <span className="text-xs text-muted-foreground ml-auto">{pubDate}</span>
           )}
         </div>
       </CardContent>
     </Card>
+
+    {readerOpen && (
+      <ReaderModal
+        url={article.url}
+        title={article.title}
+        articleId={article.id}
+        fallbackSummary={article.ai_summary ?? article.description}
+        onClose={() => { setInternalReaderOpen(false); onReaderClose?.() }}
+      />
+    )}
+  </>
   )
 }
