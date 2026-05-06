@@ -95,13 +95,13 @@ export async function POST(req: NextRequest) {
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json() as {
-    question: string
+    messages: { role: 'user' | 'assistant'; content: string }[]
     scope: 'general' | 'feed' | 'folder'
     feedId?: string
     folder?: string
   }
-  const { question, scope, feedId, folder } = body
-  if (!question?.trim()) return Response.json({ error: 'question required' }, { status: 400 })
+  const { messages, scope, feedId, folder } = body
+  if (!messages?.length) return Response.json({ error: 'messages required' }, { status: 400 })
 
   const scopeObj: Scope =
     scope === 'feed' && feedId ? { type: 'feed', feedId } :
@@ -128,7 +128,7 @@ ${context}`
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 1024,
           system,
-          messages: [{ role: 'user', content: question }],
+          messages,
         })
         for await (const event of response) {
           if (
