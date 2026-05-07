@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { X, ExternalLink, Loader2, BookOpen, AlertCircle, Highlighter, Trash2, Bookmark, BookmarkCheck, Sparkles } from 'lucide-react'
+import { X, ExternalLink, Loader2, BookOpen, AlertCircle, Highlighter, Trash2, Bookmark, BookmarkCheck, Sparkles, Maximize2, Minimize2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { ShareButton } from './ShareButton'
@@ -54,6 +54,7 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null)
   const [showHighlights, setShowHighlights] = useState(false)
   const [saved, setSaved] = useState(isSaved)
+  const [focusMode, setFocusMode] = useState(false)
   const [aiSummary, setAiSummary] = useState<string | null>(fallbackSummary ?? null)
   const [showSummary, setShowSummary] = useState(false)
   const [loadingSummary, setLoadingSummary] = useState(false)
@@ -206,12 +207,20 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
   const modal = (
     <div
       ref={backdropRef}
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4"
+      className={cn(
+        'fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-center',
+        focusMode ? 'items-stretch p-0' : 'items-end sm:items-center sm:p-4'
+      )}
       onClick={(e) => { if (e.target === backdropRef.current) onClose() }}
     >
       <div
-        className="bg-background flex flex-col w-full max-w-2xl rounded-t-2xl sm:rounded-xl shadow-2xl"
-        style={{ height: 'min(92vh, 820px)' }}
+        className={cn(
+          'bg-background flex flex-col w-full shadow-2xl transition-all duration-200',
+          focusMode
+            ? 'max-w-none rounded-none h-full'
+            : 'max-w-2xl rounded-t-2xl sm:rounded-xl'
+        )}
+        style={focusMode ? undefined : { height: 'min(92vh, 820px)' }}
       >
         {/* Header */}
         <div className="flex items-center justify-between gap-3 px-4 py-3 border-b shrink-0">
@@ -254,6 +263,13 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
               disabled={fontSize === 'xl'}
               className="px-1.5 py-1 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
             >A+</button>
+            <button
+              onClick={() => setFocusMode((v) => !v)}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              title={focusMode ? t('focusOff') : t('focusOn')}
+            >
+              {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </button>
             <button
               onClick={onClose}
               className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -300,7 +316,10 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
         )}
 
         {/* Scrollable body */}
-        <div className="reader-scroll flex-1 overflow-y-auto overscroll-contain px-6 py-6 sm:px-8 relative min-h-0" onMouseUp={handleMouseUp}>
+        <div className={cn(
+          'reader-scroll flex-1 overflow-y-auto overscroll-contain relative min-h-0 py-6',
+          focusMode ? 'px-6 sm:px-0' : 'px-6 sm:px-8',
+        )} onMouseUp={handleMouseUp}>
           {tooltip && (
             <div
               className="absolute z-10 -translate-x-1/2 -translate-y-full"
@@ -344,7 +363,7 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
           )}
 
           {state === 'ok' && content && (
-            <article ref={articleRef}>
+            <article ref={articleRef} className={cn(focusMode && 'max-w-2xl mx-auto px-6 sm:px-8')}>
               <h1 className="font-bold text-xl sm:text-2xl leading-snug mb-2">
                 {content.title || title}
               </h1>
@@ -352,7 +371,7 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
                 <p className="text-sm text-muted-foreground mb-5">{content.byline}</p>
               )}
               <div
-                style={{ fontSize: FONT_SIZE_PX[fontSize] }}
+                style={{ fontSize: focusMode ? `calc(${FONT_SIZE_PX[fontSize]} * 1.1)` : FONT_SIZE_PX[fontSize] }}
                 className={cn(
                   'prose dark:prose-invert max-w-none',
                   'prose-headings:font-semibold prose-headings:leading-snug',

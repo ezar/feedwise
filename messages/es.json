@@ -76,7 +76,9 @@
     "openOriginal": "Original",
     "summarize": "Resumen IA",
     "summarizing": "Resumiendo…",
-    "summaryTitle": "Resumen IA"
+    "summaryTitle": "Resumen IA",
+    "focusOn": "Modo foco",
+    "focusOff": "Salir del modo foco"
   },
   "share": {
     "button": "Compartir",
@@ -97,7 +99,10 @@
     "regenerate": "Regenerar",
     "basedOn": "Basado en {count} artículos de tus feeds",
     "noArticles": "No hay artículos recientes. Asegúrate de que tus feeds se están sincronizando.",
-    "error": "Error al generar el briefing. Inténtalo de nuevo."
+    "error": "Error al generar el briefing. Inténtalo de nuevo.",
+    "continueReading": "Artículos fuente",
+    "readInReader": "Abrir en lector",
+    "openOriginal": "Abrir original"
   },
   "digest": {
     "button": "Digest IA",

@@ -17,7 +17,7 @@ export async function POST(req: Request) {
   const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
   const { data: articles, error } = await supabase
     .from('articles')
-    .select('title, description, ai_summary, relevance_score, feeds(title)')
+    .select('id, title, url, description, ai_summary, relevance_score, feeds(title)')
     .gte('published_at', since)
     .order('relevance_score', { ascending: false, nullsFirst: false })
     .order('published_at', { ascending: false })
@@ -50,7 +50,14 @@ Output only the briefing text — no intro, no "Here is your briefing", no markd
     })
 
     const text = message.content[0].type === 'text' ? message.content[0].text : ''
-    return Response.json({ briefing: text, articleCount: articles.length })
+    const articleList = articles.map((a) => ({
+      id: a.id as string,
+      title: a.title as string,
+      url: a.url as string,
+      feedTitle: (a.feeds as { title?: string } | null)?.title ?? '',
+      score: a.relevance_score as number | null,
+    }))
+    return Response.json({ briefing: text, articleCount: articles.length, articles: articleList })
   } catch (err) {
     return Response.json({ error: err instanceof Error ? err.message : 'AI error' }, { status: 500 })
   }

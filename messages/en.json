@@ -76,7 +76,9 @@
     "openOriginal": "Original",
     "summarize": "AI Summary",
     "summarizing": "Summarising…",
-    "summaryTitle": "AI Summary"
+    "summaryTitle": "AI Summary",
+    "focusOn": "Focus mode",
+    "focusOff": "Exit focus mode"
   },
   "share": {
     "button": "Share",
@@ -97,7 +99,10 @@
     "regenerate": "Regenerate",
     "basedOn": "Based on {count} articles from your feeds",
     "noArticles": "No recent articles found. Make sure your feeds are syncing.",
-    "error": "Error generating the briefing. Try again."
+    "error": "Error generating the briefing. Try again.",
+    "continueReading": "Source articles",
+    "readInReader": "Open in reader",
+    "openOriginal": "Open original"
   },
   "digest": {
     "button": "AI Digest",
