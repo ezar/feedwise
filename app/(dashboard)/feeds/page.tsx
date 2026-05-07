@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Search, ArrowDownUp } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { FeedForm } from '@/components/feeds/FeedForm'
 import { FeedList } from '@/components/feeds/FeedList'
@@ -31,6 +31,7 @@ interface TopicPreview {
 }
 
 type FeedFilter = 'all' | 'unread' | 'errors' | 'topic' | 'manual'
+type FeedSort = 'default' | 'alpha' | 'unread' | 'recent'
 
 const FILTERS: FeedFilter[] = ['all', 'unread', 'errors', 'topic', 'manual']
 
@@ -39,7 +40,7 @@ export default function FeedsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FeedFilter>('all')
-  const [sortByUnread, setSortByUnread] = useState(false)
+  const [sortBy, setSortBy] = useState<FeedSort>('default')
   const t = useTranslations('feeds')
 
   const loadFeeds = useCallback(async () => {
@@ -88,8 +89,18 @@ export default function FeedsPage() {
   else if (filter === 'topic') filtered = filtered.filter((f) => f.feed_type === 'topic')
   else if (filter === 'manual') filtered = filtered.filter((f) => f.feed_type === 'manual')
 
-  if (sortByUnread) {
+  if (sortBy === 'alpha') {
+    filtered = [...filtered].sort((a, b) =>
+      (a.title ?? a.url).localeCompare(b.title ?? b.url)
+    )
+  } else if (sortBy === 'unread') {
     filtered = [...filtered].sort((a, b) => (b.unread_count ?? 0) - (a.unread_count ?? 0))
+  } else if (sortBy === 'recent') {
+    filtered = [...filtered].sort((a, b) => {
+      const ta = a.last_fetched_at ? new Date(a.last_fetched_at).getTime() : 0
+      const tb = b.last_fetched_at ? new Date(b.last_fetched_at).getTime() : 0
+      return tb - ta
+    })
   }
 
   const filterLabel = (f: FeedFilter) => {
@@ -137,19 +148,17 @@ export default function FeedsPage() {
           <h3 className="text-base font-medium">
             {t('activeFeeds')} {!loading && `(${feeds.length})`}
           </h3>
-          {!loading && feeds.some((f) => (f.unread_count ?? 0) > 0) && (
-            <button
-              onClick={() => setSortByUnread((v) => !v)}
-              className={cn(
-                'flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-colors',
-                sortByUnread
-                  ? 'border-primary text-primary bg-primary/10'
-                  : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/30'
-              )}
+          {!loading && feeds.length > 1 && (
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as FeedSort)}
+              className="text-xs border rounded-md px-2 py-1 bg-background text-muted-foreground hover:text-foreground outline-none focus:ring-1 focus:ring-ring cursor-pointer"
             >
-              <ArrowDownUp className="h-3 w-3" />
-              {t('sortByUnread')}
-            </button>
+              <option value="default">{t('sortDefault')}</option>
+              <option value="alpha">{t('sortAlpha')}</option>
+              <option value="unread">{t('sortUnread')}</option>
+              <option value="recent">{t('sortRecent')}</option>
+            </select>
           )}
         </div>
 
