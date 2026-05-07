@@ -292,15 +292,21 @@
     "title": "Reading stats",
     "streak": "Streak",
     "streakDays": "days in a row",
+    "today": "Today",
     "totalRead": "Total read",
     "articles": "articles",
     "last7days": "Last 7 days",
-    "topSources": "Favourite sources",
+    "topSources": "Top sources",
+    "topSourcesHint": "Articles read per feed · avg AI score",
     "unread": "Unread",
     "saved": "Saved",
     "thisWeek": "This week",
     "perDay": "/day",
-    "last90days": "Last 90 days"
+    "minutes": "min",
+    "last90days": "Last 90 days",
+    "aiQuality": "AI Score (what you read)",
+    "aiQualityHint": "Average relevance score of articles read in the last 90 days.",
+    "noData": "No reading data yet. Start reading articles to see your stats."
   },
   "trending": {
     "title": "Trending this week"

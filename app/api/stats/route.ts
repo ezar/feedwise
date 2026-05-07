@@ -7,66 +7,79 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
+  const now = new Date()
+  const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString()
 
   const [
     { data: readArticles },
-    { count: totalRead },
-    { count: totalUnread },
     { count: totalSaved },
     { data: topFeedsRaw },
   ] = await Promise.all([
-    // All reads in last 90 days with timestamp (for streak + chart, client will bucket by local date)
+    // All reads in last 90 days with timestamp + score (for all client-side computations)
     supabase
       .from('articles')
-      .select('read_at')
+      .select('read_at, relevance_score')
       .eq('is_read', true)
       .not('read_at', 'is', null)
       .gte('read_at', ninetyDaysAgo)
       .order('read_at', { ascending: false }),
-    // Total ever read
-    supabase
-      .from('articles')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_read', true),
-    // Total unread
-    supabase
-      .from('articles')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_read', false),
     // Total saved
     supabase
       .from('articles')
       .select('id', { count: 'exact', head: true })
       .eq('is_saved', true),
-    // Top feeds by reads (last 90 days)
+    // Top feeds by reads in last 90 days
     supabase
       .from('articles')
-      .select('feeds!inner(title)')
+      .select('relevance_score, feeds!inner(title)')
       .eq('is_read', true)
       .not('read_at', 'is', null)
       .gte('read_at', ninetyDaysAgo),
   ])
 
-  // Aggregate top feeds server-side
-  const feedMap = new Map<string, number>()
+  const reads = readArticles ?? []
+
+  // Score distribution buckets (only scored articles)
+  const scored = reads.filter((a) => a.relevance_score !== null)
+  const avgScore = scored.length
+    ? Math.round(scored.reduce((s, a) => s + (a.relevance_score as number), 0) / scored.length)
+    : null
+  const scoreDistribution = [
+    { label: '0–24', count: scored.filter((a) => (a.relevance_score as number) < 25).length },
+    { label: '25–49', count: scored.filter((a) => (a.relevance_score as number) >= 25 && (a.relevance_score as number) < 50).length },
+    { label: '50–74', count: scored.filter((a) => (a.relevance_score as number) >= 50 && (a.relevance_score as number) < 75).length },
+    { label: '75–100', count: scored.filter((a) => (a.relevance_score as number) >= 75).length },
+  ]
+
+  // Top feeds: aggregate reads + avg score
+  const feedMap = new Map<string, { count: number; scoreSum: number; scoreCount: number }>()
   for (const a of topFeedsRaw ?? []) {
     const title = (a.feeds as { title?: string | null } | null)?.title ?? 'Unknown'
-    feedMap.set(title, (feedMap.get(title) ?? 0) + 1)
+    const entry = feedMap.get(title) ?? { count: 0, scoreSum: 0, scoreCount: 0 }
+    entry.count++
+    if (a.relevance_score !== null) {
+      entry.scoreSum += a.relevance_score as number
+      entry.scoreCount++
+    }
+    feedMap.set(title, entry)
   }
   const topFeeds = Array.from(feedMap.entries())
-    .sort((a, b) => b[1] - a[1])
+    .sort((a, b) => b[1].count - a[1].count)
     .slice(0, 5)
-    .map(([title, count]) => ({ title, count }))
+    .map(([title, { count, scoreSum, scoreCount }]) => ({
+      title,
+      count,
+      avgScore: scoreCount > 0 ? Math.round(scoreSum / scoreCount) : null,
+    }))
 
-  // Return raw timestamps — client will group by local date
-  const readTimestamps = (readArticles ?? []).map((a) => a.read_at as string)
+  // Return raw timestamps for client-side streak + chart bucketing
+  const readTimestamps = reads.map((a) => a.read_at as string)
 
   return Response.json({
     readTimestamps,
     topFeeds,
-    totalRead: totalRead ?? 0,
-    totalUnread: totalUnread ?? 0,
     totalSaved: totalSaved ?? 0,
+    avgScore,
+    scoreDistribution,
   })
 }

@@ -292,15 +292,21 @@
     "title": "Estadísticas de lectura",
     "streak": "Racha",
     "streakDays": "días seguidos",
+    "today": "Hoy",
     "totalRead": "Total leídos",
     "articles": "artículos",
     "last7days": "Últimos 7 días",
-    "topSources": "Fuentes favoritas",
+    "topSources": "Fuentes principales",
+    "topSourcesHint": "Artículos leídos por feed · score IA medio",
     "unread": "Sin leer",
     "saved": "Guardados",
     "thisWeek": "Esta semana",
     "perDay": "/día",
-    "last90days": "Últimos 90 días"
+    "minutes": "min",
+    "last90days": "Últimos 90 días",
+    "aiQuality": "Score IA (lo que lees)",
+    "aiQualityHint": "Score de relevancia medio de los artículos leídos en los últimos 90 días.",
+    "noData": "Sin datos de lectura aún. Empieza a leer artículos para ver tus estadísticas."
   },
   "trending": {
     "title": "Tendencias esta semana"
