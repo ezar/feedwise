@@ -306,8 +306,6 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
         if (!entries[0].isIntersecting) return
         if (hasMoreRef.current) {
           void loadMore()
-        } else {
-          markAllVisibleRead()
         }
       },
       { rootMargin: '200px' }
