@@ -306,7 +306,18 @@
     "last90days": "Last 90 days",
     "aiQuality": "AI Score (what you read)",
     "aiQualityHint": "Average relevance score of articles read in the last 90 days.",
-    "noData": "No reading data yet. Start reading articles to see your stats."
+    "noData": "No reading data yet. Start reading articles to see your stats.",
+    "engagement": "Reading engagement",
+    "engRead": "articles read",
+    "engOpened": "opened in reader",
+    "engSaved": "saved",
+    "hourlyPattern": "When you read",
+    "peakAt": "Peak at",
+    "feedEngagement": "Feed engagement",
+    "feedEngagementHint": "Sorted by depth of engagement (reader opens + saves). Reveals which feeds you actually read vs scroll past.",
+    "reads": "reads",
+    "opened": "opened",
+    "savedPct": "saved"
   },
   "trending": {
     "title": "Trending this week"

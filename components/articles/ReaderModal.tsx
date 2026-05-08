@@ -80,6 +80,12 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
         if (!res.ok || data.error) throw new Error(data.error ?? 'Error')
         setContent(data)
         setState('ok')
+        // Track reader engagement — fire and forget
+        fetch(`/api/articles/${articleId}`, {
+          method: 'PATCH', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reader_opened: true }),
+        }).catch(() => {})
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'Error'
         // Hide internal JSDOM/parser errors from users

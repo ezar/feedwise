@@ -7,39 +7,29 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const now = new Date()
-  const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString()
+  const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
 
   const [
     { data: readArticles },
     { count: totalSaved },
-    { data: topFeedsRaw },
   ] = await Promise.all([
-    // All reads in last 90 days with timestamp + score (for all client-side computations)
+    // All reads in last 90 days — full engagement data
     supabase
       .from('articles')
-      .select('read_at, relevance_score')
+      .select('read_at, relevance_score, is_saved, reader_opened_at, feeds!inner(title)')
       .eq('is_read', true)
       .not('read_at', 'is', null)
       .gte('read_at', ninetyDaysAgo)
       .order('read_at', { ascending: false }),
-    // Total saved
     supabase
       .from('articles')
       .select('id', { count: 'exact', head: true })
       .eq('is_saved', true),
-    // Top feeds by reads in last 90 days
-    supabase
-      .from('articles')
-      .select('relevance_score, feeds!inner(title)')
-      .eq('is_read', true)
-      .not('read_at', 'is', null)
-      .gte('read_at', ninetyDaysAgo),
   ])
 
   const reads = readArticles ?? []
 
-  // Score distribution buckets (only scored articles)
+  // --- Score stats ---
   const scored = reads.filter((a) => a.relevance_score !== null)
   const avgScore = scored.length
     ? Math.round(scored.reduce((s, a) => s + (a.relevance_score as number), 0) / scored.length)
@@ -51,35 +41,46 @@ export async function GET() {
     { label: '75–100', count: scored.filter((a) => (a.relevance_score as number) >= 75).length },
   ]
 
-  // Top feeds: aggregate reads + avg score
-  const feedMap = new Map<string, { count: number; scoreSum: number; scoreCount: number }>()
-  for (const a of topFeedsRaw ?? []) {
+  // --- Hourly reading pattern (local hour of user doesn't matter here — use UTC) ---
+  const hourlyPattern = Array.from({ length: 24 }, (_, h) => ({
+    hour: h,
+    count: reads.filter((a) => new Date(a.read_at as string).getUTCHours() === h).length,
+  }))
+
+  // --- Per-feed engagement stats ---
+  interface FeedEntry { reads: number; readerOpens: number; saves: number; scoreSum: number; scoreCount: number }
+  const feedMap = new Map<string, FeedEntry>()
+  for (const a of reads) {
     const title = (a.feeds as { title?: string | null } | null)?.title ?? 'Unknown'
-    const entry = feedMap.get(title) ?? { count: 0, scoreSum: 0, scoreCount: 0 }
-    entry.count++
-    if (a.relevance_score !== null) {
-      entry.scoreSum += a.relevance_score as number
-      entry.scoreCount++
-    }
+    const entry = feedMap.get(title) ?? { reads: 0, readerOpens: 0, saves: 0, scoreSum: 0, scoreCount: 0 }
+    entry.reads++
+    if (a.reader_opened_at) entry.readerOpens++
+    if (a.is_saved) entry.saves++
+    if (a.relevance_score !== null) { entry.scoreSum += a.relevance_score as number; entry.scoreCount++ }
     feedMap.set(title, entry)
   }
-  const topFeeds = Array.from(feedMap.entries())
-    .sort((a, b) => b[1].count - a[1].count)
-    .slice(0, 5)
-    .map(([title, { count, scoreSum, scoreCount }]) => ({
+
+  const feedStats = Array.from(feedMap.entries())
+    .map(([title, { reads: r, readerOpens, saves, scoreSum, scoreCount }]) => ({
       title,
-      count,
+      reads: r,
+      readerOpens,
+      saves,
+      engagementScore: readerOpens * 2 + saves * 3,
       avgScore: scoreCount > 0 ? Math.round(scoreSum / scoreCount) : null,
     }))
+    .sort((a, b) => b.engagementScore - a.engagementScore || b.reads - a.reads)
+    .slice(0, 8)
 
-  // Return raw timestamps for client-side streak + chart bucketing
+  // Raw timestamps for client-side 7-day chart + streak
   const readTimestamps = reads.map((a) => a.read_at as string)
 
   return Response.json({
     readTimestamps,
-    topFeeds,
     totalSaved: totalSaved ?? 0,
     avgScore,
     scoreDistribution,
+    hourlyPattern,
+    feedStats,
   })
 }

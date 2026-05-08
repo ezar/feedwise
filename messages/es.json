@@ -306,7 +306,18 @@
     "last90days": "Últimos 90 días",
     "aiQuality": "Score IA (lo que lees)",
     "aiQualityHint": "Score de relevancia medio de los artículos leídos en los últimos 90 días.",
-    "noData": "Sin datos de lectura aún. Empieza a leer artículos para ver tus estadísticas."
+    "noData": "Sin datos de lectura aún. Empieza a leer artículos para ver tus estadísticas.",
+    "engagement": "Interacción con artículos",
+    "engRead": "artículos leídos",
+    "engOpened": "abiertos en lector",
+    "engSaved": "guardados",
+    "hourlyPattern": "Cuándo lees",
+    "peakAt": "Pico a las",
+    "feedEngagement": "Interacción por feed",
+    "feedEngagementHint": "Ordenado por profundidad de lectura (abiertos + guardados). Muestra qué feeds realmente lees vs cuáles solo ojeas.",
+    "reads": "leídos",
+    "opened": "abierto",
+    "savedPct": "guardado"
   },
   "trending": {
     "title": "Tendencias esta semana"
