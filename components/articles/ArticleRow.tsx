@@ -39,6 +39,12 @@ export function ArticleRow({ article, onMarkRead, onExpand, onOpenReader }: Arti
         body: JSON.stringify({ is_read: true }),
       })
     }
+    fetch(`/api/articles/${article.id}`, {
+      credentials: 'include',
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reader_opened: true }),
+    }).catch(() => {})
   }
 
   const handleOpenReader = (e: React.MouseEvent) => {

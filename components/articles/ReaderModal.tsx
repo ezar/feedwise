@@ -432,6 +432,13 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
               href={url}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => {
+                fetch(`/api/articles/${articleId}`, {
+                  method: 'PATCH', credentials: 'include',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ reader_opened: true }),
+                }).catch(() => {})
+              }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
               <ExternalLink className="h-4 w-4" />
