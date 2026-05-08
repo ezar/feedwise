@@ -704,8 +704,9 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
                       <SwipeableArticle
                         onSwipeLeft={() => { handleSaveToggle(main.id, !main.is_saved); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_saved: !main.is_saved }) }) }}
                         onSwipeRight={() => { handleMarkRead(main.id); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_read: true }) }) }}
+                        onTap={() => toggleCard(main.id)}
                       >
-                        <ArticleRow article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => setReaderOpenId(main.id)} onOpenReader={() => setReaderOpenId(main.id)} />
+                        <ArticleRow article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => toggleCard(main.id)} onOpenReader={() => setReaderOpenId(main.id)} />
                       </SwipeableArticle>
                     )}
                   </div>
@@ -733,7 +734,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
                           </div>
                         </div>
                       ) : (
-                        <ArticleRow article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => setReaderOpenId(dupe.id)} onOpenReader={() => setReaderOpenId(dupe.id)} />
+                        <ArticleRow article={dupe} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => toggleCard(dupe.id)} onOpenReader={() => setReaderOpenId(dupe.id)} />
                       )}
                     </div>
                   ))}
