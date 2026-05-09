@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Rss, Sparkles, Clock, ExternalLink, AlertCircle } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Rss, Sparkles, Clock, ExternalLink, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
@@ -26,6 +26,18 @@ export default async function FeedDetailPage({
 
   if (!feed) notFound()
 
+  // Fetch all feed IDs in list order to build prev/next navigation
+  const { data: allFeeds } = await supabase
+    .from('feeds')
+    .select('id, title')
+    .eq('user_id', user!.id)
+    .order('created_at', { ascending: false })
+
+  const feedIds = (allFeeds ?? []).map((f) => f.id as string)
+  const currentIdx = feedIds.indexOf(params.id)
+  const prevFeed = currentIdx > 0 ? (allFeeds ?? [])[currentIdx - 1] : null
+  const nextFeed = currentIdx < feedIds.length - 1 ? (allFeeds ?? [])[currentIdx + 1] : null
+
   const [{ data: articles }, { count: totalCount }, { count: pendingCount }] = await Promise.all([
     supabase
       .from('articles')
@@ -50,13 +62,44 @@ export default async function FeedDetailPage({
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
-        <Link
-          href="/feeds"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Volver a feeds
-        </Link>
+        <div className="flex items-center justify-between mb-4">
+          <Link
+            href="/feeds"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Volver a feeds
+          </Link>
+          <div className="flex items-center gap-1">
+            {prevFeed ? (
+              <Link
+                href={`/feeds/${prevFeed.id}`}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-muted"
+                title={prevFeed.title ?? ''}
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline max-w-[120px] truncate">{prevFeed.title}</span>
+              </Link>
+            ) : (
+              <span className="px-2 py-1 opacity-0 pointer-events-none"><ArrowLeft className="h-3.5 w-3.5" /></span>
+            )}
+            <span className="text-xs text-muted-foreground tabular-nums px-1">
+              {currentIdx + 1}/{feedIds.length}
+            </span>
+            {nextFeed ? (
+              <Link
+                href={`/feeds/${nextFeed.id}`}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-muted"
+                title={nextFeed.title ?? ''}
+              >
+                <span className="hidden sm:inline max-w-[120px] truncate">{nextFeed.title}</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            ) : (
+              <span className="px-2 py-1 opacity-0 pointer-events-none"><ArrowRight className="h-3.5 w-3.5" /></span>
+            )}
+          </div>
+        </div>
 
         <div className="flex items-start gap-3">
           {feed.feed_type === 'topic'

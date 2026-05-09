@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Feedwise
 
-## Getting Started
+Personal RSS news reader with AI-powered relevance filtering.
 
-First, run the development server:
+You describe in natural language what you want to read. Claude extracts topics, generates Google News RSS feeds, and scores each article by relevance — so your feed only shows what actually matters to you.
+
+## Features
+
+- **AI feed generation** — describe your interests in plain language, Claude generates Google News RSS queries automatically
+- **Relevance scoring** — every article is scored 0–100 by Claude Haiku against your interests; set a threshold to filter out noise
+- **Reader modal** — distraction-free reading with focus mode, adjustable font size, AI summary, and highlights
+- **Daily briefing** — Claude synthesises your top articles into a structured daily digest with source links
+- **Chat with your feeds** — ask questions about articles from the last 14 days, with full conversation memory
+- **Engagement stats** — reading streak, hourly patterns, per-feed depth (open rate, save rate, avg score)
+- **Deduplication** — similar articles from different sources are grouped automatically
+- **OPML import** — migrate from Feedly or any other reader
+- **Push notifications** — get notified when high-score articles arrive
+- **PWA-ready** — installable on mobile, swipe gestures to save/mark read
+- **i18n** — Spanish and English
+
+## Stack
+
+| Layer | Tech |
+|-------|------|
+| Framework | Next.js 14 App Router + TypeScript |
+| Database | Supabase (PostgreSQL + Auth + RLS) |
+| Queue / Cron | Upstash QStash |
+| AI | Anthropic Claude (Sonnet for feed generation, Haiku for scoring) |
+| Styling | Tailwind CSS + shadcn/ui |
+| i18n | next-intl |
+| Testing | Vitest |
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.example .env.local   # fill in your keys
+pnpm supabase start          # local Supabase instance
+pnpm supabase db push        # apply migrations
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+See `.env.example` for the full list. Required:
 
-## Learn More
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+ANTHROPIC_API_KEY
+QSTASH_TOKEN
+QSTASH_CURRENT_SIGNING_KEY
+QSTASH_NEXT_SIGNING_KEY
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Project structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+app/
+  (auth)/          # login, register
+  (dashboard)/     # feed, feeds, saved, profile, stats, briefing, ia, chat
+  api/             # REST endpoints
+components/
+  articles/        # ArticleCard, ArticleRow, ReaderModal, ShareButton…
+  briefing/        # BriefingPanel
+  chat/            # ChatInterface
+  feeds/           # FeedList, FeedForm, TopicInput…
+  layout/          # Sidebar, MobileNav
+  stats/           # ReadingStats
+lib/
+  ai/              # topic-extractor.ts (Sonnet), scorer.ts (Haiku)
+  rss/             # parser.ts, google-news.ts
+  qstash/          # client.ts, scheduler.ts
+  supabase/        # server.ts, client.ts
+supabase/
+  migrations/      # 14 SQL migrations
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Key commands
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+pnpm dev           # development server
+pnpm build         # production build
+pnpm test          # Vitest
+pnpm lint          # ESLint
+pnpm type-check    # tsc --noEmit
+pnpm supabase db push   # apply pending migrations
+```
