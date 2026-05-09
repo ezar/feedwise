@@ -8,7 +8,7 @@ export async function PATCH(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await req.json() as { is_read?: boolean; is_saved?: boolean; note?: string | null }
+  const body = await req.json() as { is_read?: boolean; is_saved?: boolean; note?: string | null; reader_opened?: boolean }
   const updates: Record<string, unknown> = {}
   if (typeof body.is_read === 'boolean') {
     updates.is_read = body.is_read
@@ -16,6 +16,7 @@ export async function PATCH(
   }
   if (typeof body.is_saved === 'boolean') updates.is_saved = body.is_saved
   if ('note' in body) updates.note = body.note ?? null
+  if (body.reader_opened) updates.reader_opened_at = new Date().toISOString()
 
   const { data, error } = await supabase
     .from('articles')

@@ -6,7 +6,9 @@
     "settings": "Settings",
     "stats": "Stats",
     "briefing": "Briefing",
-    "chat": "Chat"
+    "chat": "Chat",
+    "ia": "AI",
+    "profile": "Profile"
   },
   "auth": {
     "signInTitle": "Sign in to your account",
@@ -62,11 +64,21 @@
   },
   "article": {
     "reader": "Reader mode",
-    "save": "Save article",
+    "save": "Save",
+    "saved": "Saved",
     "unsave": "Remove from saved",
     "saveError": "Error saving",
     "saveSuccess": "Article saved",
-    "unsaveSuccess": "Removed from saved"
+    "unsaveSuccess": "Removed from saved",
+    "loading": "Loading article…",
+    "loadError": "Could not load content",
+    "saveHighlight": "Save selection",
+    "openOriginal": "Original",
+    "summarize": "AI Summary",
+    "summarizing": "Summarising…",
+    "summaryTitle": "AI Summary",
+    "focusOn": "Focus mode",
+    "focusOff": "Exit focus mode"
   },
   "share": {
     "button": "Share",
@@ -87,7 +99,10 @@
     "regenerate": "Regenerate",
     "basedOn": "Based on {count} articles from your feeds",
     "noArticles": "No recent articles found. Make sure your feeds are syncing.",
-    "error": "Error generating the briefing. Try again."
+    "error": "Error generating the briefing. Try again.",
+    "continueReading": "Source articles",
+    "readInReader": "Open in reader",
+    "openOriginal": "Open original"
   },
   "digest": {
     "button": "AI Digest",
@@ -112,7 +127,27 @@
     "namePlaceholder": "My favourite blog",
     "addButton": "Add feed",
     "addError": "Error adding feed",
-    "addSuccess": "Feed added successfully"
+    "addSuccess": "Feed added successfully",
+    "tabTopic": "By topic",
+    "tabManual": "Manual",
+    "addTopicTitle": "Describe what you want to read",
+    "addTopicDesc": "Claude extracts queries and creates Google News feeds automatically.",
+    "addManualTitle": "Add RSS feed",
+    "addManualDesc": "Paste the URL of any RSS or Atom feed.",
+    "activeFeeds": "Active feeds",
+    "searchPlaceholder": "Search feeds…",
+    "sortByUnread": "Sort by unread",
+    "sortDefault": "Default order",
+    "sortAlpha": "A → Z",
+    "sortUnread": "Most unread",
+    "sortRecent": "Latest post",
+    "filter_all": "All",
+    "filter_unread": "Unread",
+    "filter_errors": "Errors",
+    "filter_topic": "AI Topic",
+    "filter_manual": "Manual",
+    "noMatch": "No feeds matching \"{query}\"",
+    "noMatchFilter": "No feeds match this filter"
   },
   "topic": {
     "placeholder": "E.g. I want news about AI applied to productivity, no fundraising or investment…",
@@ -257,10 +292,32 @@
     "title": "Reading stats",
     "streak": "Streak",
     "streakDays": "days in a row",
+    "today": "Today",
     "totalRead": "Total read",
     "articles": "articles",
     "last7days": "Last 7 days",
-    "topSources": "Favourite sources"
+    "topSources": "Top sources",
+    "topSourcesHint": "Articles read per feed · avg AI score",
+    "unread": "Unread",
+    "saved": "Saved",
+    "thisWeek": "This week",
+    "perDay": "/day",
+    "minutes": "min",
+    "last90days": "Last 90 days",
+    "aiQuality": "AI Score (what you read)",
+    "aiQualityHint": "Average relevance score of articles read in the last 90 days.",
+    "noData": "No reading data yet. Start reading articles to see your stats.",
+    "engagement": "Reading engagement",
+    "engRead": "articles read",
+    "engOpened": "opened in reader",
+    "engSaved": "saved",
+    "hourlyPattern": "When you read",
+    "peakAt": "Peak at",
+    "feedEngagement": "Feed engagement",
+    "feedEngagementHint": "Sorted by depth of engagement (reader opens + saves). Reveals which feeds you actually read vs scroll past.",
+    "reads": "reads",
+    "opened": "opened",
+    "savedPct": "saved"
   },
   "trending": {
     "title": "Trending this week"
@@ -271,7 +328,9 @@
     "emptyTitle": "Chat with your articles",
     "emptyHint": "Ask questions about your feeds from the last 14 days. You can focus on a specific feed or folder.",
     "placeholder": "Ask something about your articles…",
-    "error": "Error getting response. Try again."
+    "error": "Error getting response. Try again.",
+    "newChat": "New conversation",
+    "subtitle": "Ask about your articles from the last 14 days"
   },
   "push": {
     "enable": "Enable notifications",

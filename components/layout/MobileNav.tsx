@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Rss, Bookmark, Settings, Sparkles } from 'lucide-react'
+import { LayoutDashboard, Rss, Bookmark, User, Bot } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
@@ -12,10 +12,10 @@ export function MobileNav() {
 
   const navItems = [
     { href: '/', label: t('feed'), icon: LayoutDashboard },
-    { href: '/briefing', label: t('briefing'), icon: Sparkles },
+    { href: '/ia', label: t('ia'), icon: Bot },
     { href: '/feeds', label: t('feeds'), icon: Rss },
     { href: '/saved', label: t('saved'), icon: Bookmark },
-    { href: '/settings', label: t('settings'), icon: Settings },
+    { href: '/profile', label: t('profile'), icon: User },
   ]
 
   return (

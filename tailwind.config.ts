@@ -47,6 +47,7 @@ const config: Config = {
       },
     },
   },
+  safelist: ['prose-sm', 'prose-base', 'prose-lg', 'prose-xl'],
   plugins: [require('@tailwindcss/typography')],
 }
 

@@ -306,8 +306,6 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
         if (!entries[0].isIntersecting) return
         if (hasMoreRef.current) {
           void loadMore()
-        } else {
-          markAllVisibleRead()
         }
       },
       { rootMargin: '200px' }
@@ -706,6 +704,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
                       <SwipeableArticle
                         onSwipeLeft={() => { handleSaveToggle(main.id, !main.is_saved); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_saved: !main.is_saved }) }) }}
                         onSwipeRight={() => { handleMarkRead(main.id); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_read: true }) }) }}
+                        onTap={() => toggleCard(main.id)}
                       >
                         <ArticleRow article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => toggleCard(main.id)} onOpenReader={() => setReaderOpenId(main.id)} />
                       </SwipeableArticle>
@@ -798,9 +797,20 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
       )}
 
       {!hasMore && articles.length >= INITIAL_SIZE && (
-        <p className="text-xs text-muted-foreground text-center py-2">
-          {t('reachedEnd', { count: articles.length })}
-        </p>
+        <div className="flex flex-col items-center gap-3 py-4">
+          <p className="text-xs text-muted-foreground text-center">
+            {t('reachedEnd', { count: articles.length })}
+          </p>
+          {unreadCount > 0 && (
+            <button
+              onClick={handleMarkAllRead}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-primary/30 text-primary hover:bg-primary/5 transition-colors"
+            >
+              <CheckCheck className="h-3.5 w-3.5" />
+              {t('markAllRead')}
+            </button>
+          )}
+        </div>
       )}
     </div>
   )

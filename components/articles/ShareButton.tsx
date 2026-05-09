@@ -49,9 +49,18 @@ export function ShareButton({ articleId, title, url, summary: initialSummary }: 
     return null
   }
 
+  const trackEngagement = () => {
+    fetch(`/api/articles/${articleId}`, {
+      method: 'PATCH', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reader_opened: true }),
+    }).catch(() => {})
+  }
+
   // Mobile: single tap → native share sheet (no dropdown)
   const handleNativeShare = async () => {
     setLoading(true)
+    trackEngagement()
     const text = await fetchSummary()
     try {
       await navigator.share({ title, text: text ?? undefined, url })
@@ -65,12 +74,14 @@ export function ShareButton({ articleId, title, url, summary: initialSummary }: 
   const shareText = summary ? `${title}\n\n${summary}\n\n${url}` : `${title}\n\n${url}`
 
   const copyLink = async () => {
+    trackEngagement()
     await navigator.clipboard.writeText(url)
     setCopied('link')
     setTimeout(() => { setCopied(null); setOpen(false) }, 1500)
   }
 
   const copyText = async () => {
+    trackEngagement()
     await navigator.clipboard.writeText(shareText)
     setCopied('text')
     setTimeout(() => { setCopied(null); setOpen(false) }, 1500)
@@ -83,11 +94,13 @@ export function ShareButton({ articleId, title, url, summary: initialSummary }: 
   }
 
   const openWhatsApp = () => {
+    trackEngagement()
     window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank', 'noopener')
     setOpen(false)
   }
 
   const openLinkedIn = () => {
+    trackEngagement()
     window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank', 'noopener')
     setOpen(false)
   }

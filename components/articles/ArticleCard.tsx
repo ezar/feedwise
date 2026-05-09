@@ -83,6 +83,13 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead, openReader: ext
         body: JSON.stringify({ is_read: true }),
       })
     }
+    // Opening the original URL counts as deep engagement
+    fetch(`/api/articles/${article.id}`, {
+      credentials: 'include',
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reader_opened: true }),
+    }).catch(() => {})
   }
 
   const pubDate = timeAgo(article.published_at, locale)

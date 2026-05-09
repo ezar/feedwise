@@ -6,18 +6,21 @@ import { Bookmark, CheckCheck } from 'lucide-react'
 interface SwipeableArticleProps {
   onSwipeLeft?: () => void   // save
   onSwipeRight?: () => void  // mark read
+  onTap?: () => void         // single tap (not a swipe)
   children: React.ReactNode
 }
 
 const SWIPE_THRESHOLD = 72
 
-export function SwipeableArticle({ onSwipeLeft, onSwipeRight, children }: SwipeableArticleProps) {
+export function SwipeableArticle({ onSwipeLeft, onSwipeRight, onTap, children }: SwipeableArticleProps) {
   const startX = useRef(0)
+  const startY = useRef(0)
   const [deltaX, setDeltaX] = useState(0)
   const swiping = useRef(false)
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startX.current = e.touches[0].clientX
+    startY.current = e.touches[0].clientY
     swiping.current = true
   }
 
@@ -27,11 +30,18 @@ export function SwipeableArticle({ onSwipeLeft, onSwipeRight, children }: Swipea
     setDeltaX(Math.max(-120, Math.min(120, dx)))
   }
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e: React.TouchEvent) => {
     if (!swiping.current) return
     swiping.current = false
-    if (deltaX < -SWIPE_THRESHOLD) onSwipeLeft?.()
-    else if (deltaX > SWIPE_THRESHOLD) onSwipeRight?.()
+    if (deltaX < -SWIPE_THRESHOLD) {
+      onSwipeLeft?.()
+    } else if (deltaX > SWIPE_THRESHOLD) {
+      onSwipeRight?.()
+    } else if (Math.abs(deltaX) < 8) {
+      // It's a tap — fire immediately on touchEnd to avoid iOS double-tap delay
+      const dy = Math.abs(e.changedTouches[0].clientY - startY.current)
+      if (dy < 10) onTap?.()
+    }
     setDeltaX(0)
   }
 

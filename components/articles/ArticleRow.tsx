@@ -39,6 +39,12 @@ export function ArticleRow({ article, onMarkRead, onExpand, onOpenReader }: Arti
         body: JSON.stringify({ is_read: true }),
       })
     }
+    fetch(`/api/articles/${article.id}`, {
+      credentials: 'include',
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reader_opened: true }),
+    }).catch(() => {})
   }
 
   const handleOpenReader = (e: React.MouseEvent) => {
@@ -74,7 +80,7 @@ export function ArticleRow({ article, onMarkRead, onExpand, onOpenReader }: Arti
 
       {/* Title: link when no onExpand, plain text when expand mode */}
       {onExpand ? (
-        <span className="flex-1 min-w-0 text-sm leading-snug truncate">
+        <span className="flex-1 min-w-0 text-sm leading-snug line-clamp-2">
           {article.title}
         </span>
       ) : (
@@ -83,7 +89,7 @@ export function ArticleRow({ article, onMarkRead, onExpand, onOpenReader }: Arti
           target="_blank"
           rel="noopener noreferrer"
           onClick={handleLinkClick}
-          className="flex-1 min-w-0 text-sm leading-snug truncate hover:text-primary transition-colors"
+          className="flex-1 min-w-0 text-sm leading-snug line-clamp-2 hover:text-primary transition-colors"
         >
           {article.title}
         </a>

@@ -40,15 +40,8 @@ export default function FeedsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FeedFilter>('all')
-  const [sortBy, setSortBy] = useState<FeedSort>(() =>
-    (typeof window !== 'undefined' ? localStorage.getItem('feedwise-feeds-sort') as FeedSort | null : null) ?? 'default'
-  )
+  const [sortBy, setSortBy] = useState<FeedSort>('default')
   const t = useTranslations('feeds')
-
-  const handleSortChange = (value: FeedSort) => {
-    setSortBy(value)
-    localStorage.setItem('feedwise-feeds-sort', value)
-  }
 
   const loadFeeds = useCallback(async () => {
     setLoading(true)
@@ -158,7 +151,7 @@ export default function FeedsPage() {
           {!loading && feeds.length > 1 && (
             <select
               value={sortBy}
-              onChange={(e) => handleSortChange(e.target.value as FeedSort)}
+              onChange={(e) => setSortBy(e.target.value as FeedSort)}
               className="text-xs border rounded-md px-2 py-1 bg-background text-muted-foreground hover:text-foreground outline-none focus:ring-1 focus:ring-ring cursor-pointer"
             >
               <option value="default">{t('sortDefault')}</option>

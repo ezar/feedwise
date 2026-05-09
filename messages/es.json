@@ -4,9 +4,11 @@
     "feeds": "Mis feeds",
     "saved": "Guardados",
     "settings": "Configuración",
-    "stats": "Stats",
+    "stats": "Estadísticas",
     "briefing": "Briefing",
-    "chat": "Chat"
+    "chat": "Chat",
+    "ia": "IA",
+    "profile": "Perfil"
   },
   "auth": {
     "signInTitle": "Inicia sesión en tu cuenta",
@@ -62,11 +64,21 @@
   },
   "article": {
     "reader": "Modo lector",
-    "save": "Guardar artículo",
+    "save": "Guardar",
+    "saved": "Guardado",
     "unsave": "Quitar de guardados",
     "saveError": "Error al guardar",
     "saveSuccess": "Artículo guardado",
-    "unsaveSuccess": "Eliminado de guardados"
+    "unsaveSuccess": "Eliminado de guardados",
+    "loading": "Cargando artículo…",
+    "loadError": "No se pudo cargar el contenido",
+    "saveHighlight": "Guardar selección",
+    "openOriginal": "Original",
+    "summarize": "Resumen IA",
+    "summarizing": "Resumiendo…",
+    "summaryTitle": "Resumen IA",
+    "focusOn": "Modo foco",
+    "focusOff": "Salir del modo foco"
   },
   "share": {
     "button": "Compartir",
@@ -87,7 +99,10 @@
     "regenerate": "Regenerar",
     "basedOn": "Basado en {count} artículos de tus feeds",
     "noArticles": "No hay artículos recientes. Asegúrate de que tus feeds se están sincronizando.",
-    "error": "Error al generar el briefing. Inténtalo de nuevo."
+    "error": "Error al generar el briefing. Inténtalo de nuevo.",
+    "continueReading": "Artículos fuente",
+    "readInReader": "Abrir en lector",
+    "openOriginal": "Abrir original"
   },
   "digest": {
     "button": "Digest IA",
@@ -112,7 +127,27 @@
     "namePlaceholder": "Mi blog favorito",
     "addButton": "Añadir feed",
     "addError": "Error al añadir feed",
-    "addSuccess": "Feed añadido correctamente"
+    "addSuccess": "Feed añadido correctamente",
+    "tabTopic": "Por tema",
+    "tabManual": "Manual",
+    "addTopicTitle": "Describe qué quieres leer",
+    "addTopicDesc": "Claude extrae las queries y crea feeds de Google News automáticamente.",
+    "addManualTitle": "Añadir feed RSS",
+    "addManualDesc": "Pega la URL de cualquier feed RSS o Atom.",
+    "activeFeeds": "Feeds activos",
+    "searchPlaceholder": "Buscar feeds…",
+    "sortByUnread": "Ordenar por no leídos",
+    "sortDefault": "Orden por defecto",
+    "sortAlpha": "A → Z",
+    "sortUnread": "Más no leídos",
+    "sortRecent": "Último post",
+    "filter_all": "Todos",
+    "filter_unread": "No leídos",
+    "filter_errors": "Con errores",
+    "filter_topic": "Tema IA",
+    "filter_manual": "Manual",
+    "noMatch": "Sin feeds que coincidan con \"{query}\"",
+    "noMatchFilter": "Ningún feed coincide con este filtro"
   },
   "topic": {
     "placeholder": "Ej: quiero noticias de IA aplicada a productividad, sin fundraising ni inversión...",
@@ -257,10 +292,32 @@
     "title": "Estadísticas de lectura",
     "streak": "Racha",
     "streakDays": "días seguidos",
+    "today": "Hoy",
     "totalRead": "Total leídos",
     "articles": "artículos",
     "last7days": "Últimos 7 días",
-    "topSources": "Fuentes favoritas"
+    "topSources": "Fuentes principales",
+    "topSourcesHint": "Artículos leídos por feed · score IA medio",
+    "unread": "Sin leer",
+    "saved": "Guardados",
+    "thisWeek": "Esta semana",
+    "perDay": "/día",
+    "minutes": "min",
+    "last90days": "Últimos 90 días",
+    "aiQuality": "Score IA (lo que lees)",
+    "aiQualityHint": "Score de relevancia medio de los artículos leídos en los últimos 90 días.",
+    "noData": "Sin datos de lectura aún. Empieza a leer artículos para ver tus estadísticas.",
+    "engagement": "Interacción con artículos",
+    "engRead": "artículos leídos",
+    "engOpened": "abiertos en lector",
+    "engSaved": "guardados",
+    "hourlyPattern": "Cuándo lees",
+    "peakAt": "Pico a las",
+    "feedEngagement": "Interacción por feed",
+    "feedEngagementHint": "Ordenado por profundidad de lectura (abiertos + guardados). Muestra qué feeds realmente lees vs cuáles solo ojeas.",
+    "reads": "leídos",
+    "opened": "abierto",
+    "savedPct": "guardado"
   },
   "trending": {
     "title": "Tendencias esta semana"
@@ -271,7 +328,9 @@
     "emptyTitle": "Chat con tus artículos",
     "emptyHint": "Haz preguntas sobre tus feeds de los últimos 14 días. Puedes enfocarte en un feed o carpeta concretos.",
     "placeholder": "Pregunta algo sobre tus artículos…",
-    "error": "Error al obtener respuesta. Inténtalo de nuevo."
+    "error": "Error al obtener respuesta. Inténtalo de nuevo.",
+    "newChat": "Nueva conversación",
+    "subtitle": "Pregunta sobre tus artículos de los últimos 14 días"
   },
   "push": {
     "enable": "Activar notificaciones",

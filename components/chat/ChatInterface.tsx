@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Send, Loader2, MessageSquare, ChevronDown } from 'lucide-react'
+import { Send, Loader2, MessageSquare, ChevronDown, PenSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
@@ -79,11 +79,10 @@ export function ChatInterface({ feeds }: { feeds: Feed[] }) {
   const send = useCallback(async (question: string) => {
     if (!question.trim() || streaming) return
     setInput('')
-    setMessages((prev) => [...prev, { role: 'user', content: question }])
+    const userMsg = { role: 'user' as const, content: question }
+    const nextMessages = [...messages, userMsg]
+    setMessages([...nextMessages, { role: 'assistant' as const, content: '' }])
     setStreaming(true)
-
-    const placeholder = { role: 'assistant' as const, content: '' }
-    setMessages((prev) => [...prev, placeholder])
 
     abortRef.current = new AbortController()
 
@@ -94,7 +93,7 @@ export function ChatInterface({ feeds }: { feeds: Feed[] }) {
         headers: { 'Content-Type': 'application/json' },
         signal: abortRef.current.signal,
         body: JSON.stringify({
-          question,
+          messages: nextMessages,
           scope: selectedScope.scope,
           feedId: selectedScope.feedId,
           folder: selectedScope.folder,
@@ -142,11 +141,12 @@ export function ChatInterface({ feeds }: { feeds: Feed[] }) {
 
   return (
     <div className="flex flex-col h-full max-h-[calc(100vh-8rem)]">
-      {/* Scope selector */}
-      <div className="relative mb-4">
+      {/* Scope selector + new chat */}
+      <div className="flex items-center gap-2 mb-4">
+      <div className="relative flex-1">
         <button
           onClick={() => setScopeOpen((v) => !v)}
-          className="flex items-center gap-2 text-sm border rounded-lg px-3 py-2 bg-background hover:bg-muted transition-colors w-full sm:w-auto"
+          className="flex items-center gap-2 text-sm border rounded-lg px-3 py-2 bg-background hover:bg-muted transition-colors w-full"
         >
           <MessageSquare className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
           <span className="font-medium truncate max-w-[200px]">{selectedScope.label}</span>
@@ -172,6 +172,16 @@ export function ChatInterface({ feeds }: { feeds: Feed[] }) {
             ))}
           </div>
         )}
+      </div>
+      {messages.length > 0 && (
+        <button
+          onClick={() => { abortRef.current?.abort(); setMessages([]); setStreaming(false) }}
+          title={t('newChat')}
+          className="shrink-0 flex items-center justify-center h-9 w-9 rounded-lg border bg-background hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+        >
+          <PenSquare className="h-4 w-4" />
+        </button>
+      )}
       </div>
 
       {/* Messages */}
