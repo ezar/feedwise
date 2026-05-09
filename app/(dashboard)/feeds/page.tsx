@@ -9,6 +9,8 @@ import { FeedListSkeleton } from '@/components/feeds/FeedSkeleton'
 import { TopicInput } from '@/components/feeds/TopicInput'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { useTranslations } from 'next-intl'
+import { cn } from '@/lib/utils'
 
 interface Feed {
   id: string
@@ -17,7 +19,9 @@ interface Feed {
   feed_type: 'manual' | 'topic'
   topic_query?: string | null
   last_fetched_at?: string | null
+  last_error?: string | null
   folder?: string | null
+  unread_count?: number
 }
 
 interface TopicPreview {
@@ -26,10 +30,25 @@ interface TopicPreview {
   title: string
 }
 
+type FeedFilter = 'all' | 'unread' | 'errors' | 'topic' | 'manual'
+type FeedSort = 'default' | 'alpha' | 'unread' | 'recent'
+
+const FILTERS: FeedFilter[] = ['all', 'unread', 'errors', 'topic', 'manual']
+
 export default function FeedsPage() {
   const [feeds, setFeeds] = useState<Feed[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState<FeedFilter>('all')
+  const [sortBy, setSortBy] = useState<FeedSort>(() =>
+    (typeof window !== 'undefined' ? localStorage.getItem('feedwise-feeds-sort') as FeedSort | null : null) ?? 'default'
+  )
+  const t = useTranslations('feeds')
+
+  const handleSortChange = (value: FeedSort) => {
+    setSortBy(value)
+    localStorage.setItem('feedwise-feeds-sort', value)
+  }
 
   const loadFeeds = useCallback(async () => {
     setLoading(true)
@@ -56,27 +75,61 @@ export default function FeedsPage() {
   }
 
   const q = search.trim().toLowerCase()
-  const filtered = q
-    ? feeds.filter((f) =>
-        (f.title ?? f.url).toLowerCase().includes(q) ||
-        f.topic_query?.toLowerCase().includes(q)
-      )
-    : feeds
+
+  const filterCounts: Record<FeedFilter, number> = {
+    all: feeds.length,
+    unread: feeds.filter((f) => (f.unread_count ?? 0) > 0).length,
+    errors: feeds.filter((f) => !!f.last_error).length,
+    topic: feeds.filter((f) => f.feed_type === 'topic').length,
+    manual: feeds.filter((f) => f.feed_type === 'manual').length,
+  }
+
+  let filtered = feeds
+  if (q) {
+    filtered = filtered.filter((f) =>
+      (f.title ?? f.url).toLowerCase().includes(q) ||
+      f.topic_query?.toLowerCase().includes(q)
+    )
+  }
+  if (filter === 'unread') filtered = filtered.filter((f) => (f.unread_count ?? 0) > 0)
+  else if (filter === 'errors') filtered = filtered.filter((f) => !!f.last_error)
+  else if (filter === 'topic') filtered = filtered.filter((f) => f.feed_type === 'topic')
+  else if (filter === 'manual') filtered = filtered.filter((f) => f.feed_type === 'manual')
+
+  if (sortBy === 'alpha') {
+    filtered = [...filtered].sort((a, b) =>
+      (a.title ?? a.url).localeCompare(b.title ?? b.url)
+    )
+  } else if (sortBy === 'unread') {
+    filtered = [...filtered].sort((a, b) => (b.unread_count ?? 0) - (a.unread_count ?? 0))
+  } else if (sortBy === 'recent') {
+    filtered = [...filtered].sort((a, b) => {
+      const ta = a.last_fetched_at ? new Date(a.last_fetched_at).getTime() : 0
+      const tb = b.last_fetched_at ? new Date(b.last_fetched_at).getTime() : 0
+      return tb - ta
+    })
+  }
+
+  const filterLabel = (f: FeedFilter) => {
+    const count = filterCounts[f]
+    const label = t(`filter_${f}`)
+    return count > 0 && f !== 'all' ? `${label} (${count})` : label
+  }
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h2 className="text-xl font-semibold mb-6">Gestión de feeds</h2>
+      <h2 className="text-xl font-semibold mb-6">{t('title')}</h2>
       <Tabs defaultValue="topic">
         <TabsList className="mb-4 w-full">
-          <TabsTrigger value="topic" className="flex-1">Por tema</TabsTrigger>
-          <TabsTrigger value="manual" className="flex-1">Manual</TabsTrigger>
+          <TabsTrigger value="topic" className="flex-1">{t('tabTopic')}</TabsTrigger>
+          <TabsTrigger value="manual" className="flex-1">{t('tabManual')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="topic">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Describe qué quieres leer</CardTitle>
-              <CardDescription>Claude extrae las queries y crea feeds de Google News automáticamente.</CardDescription>
+              <CardTitle className="text-base">{t('addTopicTitle')}</CardTitle>
+              <CardDescription>{t('addTopicDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <TopicInput onConfirm={handleTopicConfirm} />
@@ -87,8 +140,8 @@ export default function FeedsPage() {
         <TabsContent value="manual">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Añadir feed RSS</CardTitle>
-              <CardDescription>Pega la URL de cualquier feed RSS o Atom.</CardDescription>
+              <CardTitle className="text-base">{t('addManualTitle')}</CardTitle>
+              <CardDescription>{t('addManualDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <FeedForm onAdded={loadFeeds} />
@@ -100,20 +153,51 @@ export default function FeedsPage() {
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-base font-medium">
-            Feeds activos {!loading && `(${feeds.length})`}
+            {t('activeFeeds')} {!loading && `(${feeds.length})`}
           </h3>
+          {!loading && feeds.length > 1 && (
+            <select
+              value={sortBy}
+              onChange={(e) => handleSortChange(e.target.value as FeedSort)}
+              className="text-xs border rounded-md px-2 py-1 bg-background text-muted-foreground hover:text-foreground outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+            >
+              <option value="default">{t('sortDefault')}</option>
+              <option value="alpha">{t('sortAlpha')}</option>
+              <option value="unread">{t('sortUnread')}</option>
+              <option value="recent">{t('sortRecent')}</option>
+            </select>
+          )}
         </div>
 
-        {!loading && feeds.length > 5 && (
-          <div className="relative mb-3">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Buscar feeds…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 h-8 text-sm"
-            />
-          </div>
+        {!loading && feeds.length > 0 && (
+          <>
+            <div className="relative mb-3">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder={t('searchPlaceholder')}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8 h-8 text-sm"
+              />
+            </div>
+
+            <div className="flex items-center gap-1.5 flex-wrap mb-3">
+              {FILTERS.filter((f) => f === 'all' || filterCounts[f] > 0).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={cn(
+                    'text-xs px-2.5 py-1 rounded-full border transition-colors whitespace-nowrap',
+                    filter === f
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/30'
+                  )}
+                >
+                  {filterLabel(f)}
+                </button>
+              ))}
+            </div>
+          </>
         )}
 
         {loading ? (
@@ -125,9 +209,9 @@ export default function FeedsPage() {
           />
         )}
 
-        {!loading && q && filtered.length === 0 && (
+        {!loading && filtered.length === 0 && feeds.length > 0 && (
           <p className="text-sm text-muted-foreground text-center py-8">
-            No hay feeds que coincidan con &ldquo;{search}&rdquo;
+            {q ? t('noMatch', { query: search }) : t('noMatchFilter')}
           </p>
         )}
       </div>
