@@ -31,6 +31,7 @@ interface ArticleCardProps {
   onSaveToggle?: (id: string, saved: boolean) => void
   onMarkRead?: (id: string) => void
   openReader?: boolean
+  onReaderOpen?: () => void
   onReaderClose?: () => void
   onPrevArticle?: () => void
   onNextArticle?: () => void
@@ -48,7 +49,7 @@ function scoreBarColor(score: number) {
   return 'bg-red-400'
 }
 
-export function ArticleCard({ article, onSaveToggle, onMarkRead, openReader: externalOpen, onReaderClose, onPrevArticle, onNextArticle }: ArticleCardProps) {
+export function ArticleCard({ article, onSaveToggle, onMarkRead, openReader: externalOpen, onReaderOpen, onReaderClose, onPrevArticle, onNextArticle }: ArticleCardProps) {
   const [saved, setSaved] = useState(article.is_saved)
   const [internalReaderOpen, setInternalReaderOpen] = useState(false)
   const readerOpen = internalReaderOpen || !!externalOpen
@@ -128,7 +129,7 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead, openReader: ext
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              onClick={(e) => { e.preventDefault(); setInternalReaderOpen(true) }}
+              onClick={(e) => { e.preventDefault(); setInternalReaderOpen(true); onReaderOpen?.() }}
               title={t('reader')}
             >
               <BookOpen className="h-4 w-4 text-muted-foreground" />
