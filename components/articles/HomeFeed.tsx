@@ -594,10 +594,6 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
       {(viewMode === 'compact' || viewMode === 'titles') && readerOpenId && (() => {
         const art = articles.find((a) => a.id === readerOpenId)
         if (!art) return null
-        const list = mainArticlesRef.current
-        const idx = list.findIndex((a) => a.id === readerOpenId)
-        const goPrev = idx > 0 ? () => { handleMarkRead(readerOpenId); setReaderOpenId(list[idx - 1].id) } : undefined
-        const goNext = idx >= 0 && idx < list.length - 1 ? () => { handleMarkRead(readerOpenId); setReaderOpenId(list[idx + 1].id) } : undefined
         return (
           <ReaderModal
             url={art.url ?? ''}
@@ -606,8 +602,6 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
             fallbackSummary={art.ai_summary ?? art.description ?? undefined}
             onRead={() => handleMarkRead(art.id)}
             onClose={() => handleReaderClose(art.id)}
-            onPrev={goPrev}
-            onNext={goNext}
           />
         )
       })()}
@@ -767,15 +761,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
                           {t('collapse')}
                         </button>
                         <div className="p-2">
-                          <ArticleCard
-                            article={main}
-                            onSaveToggle={handleSaveToggle}
-                            onMarkRead={handleMarkRead}
-                            openReader={readerOpenId === main.id}
-                            onReaderClose={() => handleReaderClose(main.id)}
-                            onPrevArticle={(() => { const list = mainArticlesRef.current; const idx = list.findIndex((a) => a.id === main.id); return idx > 0 ? () => { handleMarkRead(main.id); setReaderOpenId(list[idx - 1].id) } : undefined })()}
-                            onNextArticle={(() => { const list = mainArticlesRef.current; const idx = list.findIndex((a) => a.id === main.id); return idx >= 0 && idx < list.length - 1 ? () => { handleMarkRead(main.id); setReaderOpenId(list[idx + 1].id) } : undefined })()}
-                          />
+                          <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} openReader={readerOpenId === main.id} onReaderClose={() => handleReaderClose(main.id)} />
                         </div>
                       </div>
                     ) : (
@@ -874,15 +860,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
                     onSwipeRight={() => { handleMarkRead(main.id); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_read: true }) }) }}
                     onLongPress={() => setActionSheetArticle(main)}
                   >
-                    <ArticleCard
-                      article={main}
-                      onSaveToggle={handleSaveToggle}
-                      onMarkRead={handleMarkRead}
-                      openReader={readerOpenId === main.id}
-                      onReaderClose={() => handleReaderClose(main.id)}
-                      onPrevArticle={(() => { const list = mainArticlesRef.current; const idx = list.findIndex((a) => a.id === main.id); return idx > 0 ? () => { handleMarkRead(main.id); setReaderOpenId(list[idx - 1].id) } : undefined })()}
-                      onNextArticle={(() => { const list = mainArticlesRef.current; const idx = list.findIndex((a) => a.id === main.id); return idx >= 0 && idx < list.length - 1 ? () => { handleMarkRead(main.id); setReaderOpenId(list[idx + 1].id) } : undefined })()}
-                    />
+                    <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} openReader={readerOpenId === main.id} onReaderClose={() => handleReaderClose(main.id)} />
                   </SwipeableArticle>
                 </div>
                 {dupes.length > 0 && !expandedGroups.has(main.id) && (
