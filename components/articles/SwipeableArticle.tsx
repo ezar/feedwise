@@ -42,7 +42,9 @@ export function SwipeableArticle({ onSwipeLeft, onSwipeRight, onTap, onLongPress
       clearTimeout(longPressTimer.current)
       longPressTimer.current = null
     }
-    setDeltaX(Math.max(-120, Math.min(120, dx)))
+    // Block swipe in directions that have no handler
+    const clamped = Math.max(onSwipeLeft ? -120 : 0, Math.min(onSwipeRight ? 120 : 0, dx))
+    setDeltaX(clamped)
   }
 
   const handleTouchEnd = (e: React.TouchEvent) => {
@@ -74,7 +76,7 @@ export function SwipeableArticle({ onSwipeLeft, onSwipeRight, onTap, onLongPress
       {/* Save indicator (swipe left) — only when handler exists */}
       {onSwipeLeft && (
         <div
-          className="absolute inset-0 flex items-center justify-end px-4 bg-primary/10 transition-opacity"
+          className="absolute inset-0 flex items-center justify-end px-4 bg-primary/20 transition-opacity"
           style={{ opacity: goingLeft ? Math.min(1, Math.abs(deltaX) / SWIPE_THRESHOLD) : 0 }}
         >
           <div className={`flex items-center gap-1.5 text-primary transition-transform ${triggeredLeft ? 'scale-110' : ''}`}>
@@ -86,7 +88,7 @@ export function SwipeableArticle({ onSwipeLeft, onSwipeRight, onTap, onLongPress
       {/* Read indicator (swipe right) — only when handler exists */}
       {onSwipeRight && (
         <div
-          className="absolute inset-0 flex items-center justify-start px-4 bg-green-500/10 transition-opacity"
+          className="absolute inset-0 flex items-center justify-start px-4 bg-green-500/20 transition-opacity"
           style={{ opacity: goingRight ? Math.min(1, Math.abs(deltaX) / SWIPE_THRESHOLD) : 0 }}
         >
           <div className={`flex items-center gap-1.5 text-green-600 dark:text-green-400 transition-transform ${triggeredRight ? 'scale-110' : ''}`}>
