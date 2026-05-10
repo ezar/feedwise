@@ -32,6 +32,8 @@ interface ArticleCardProps {
   onMarkRead?: (id: string) => void
   openReader?: boolean
   onReaderClose?: () => void
+  onPrevArticle?: () => void
+  onNextArticle?: () => void
 }
 
 function scoreColor(score: number) {
@@ -46,7 +48,7 @@ function scoreBarColor(score: number) {
   return 'bg-red-400'
 }
 
-export function ArticleCard({ article, onSaveToggle, onMarkRead, openReader: externalOpen, onReaderClose }: ArticleCardProps) {
+export function ArticleCard({ article, onSaveToggle, onMarkRead, openReader: externalOpen, onReaderClose, onPrevArticle, onNextArticle }: ArticleCardProps) {
   const [saved, setSaved] = useState(article.is_saved)
   const [internalReaderOpen, setInternalReaderOpen] = useState(false)
   const readerOpen = internalReaderOpen || !!externalOpen
@@ -205,6 +207,8 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead, openReader: ext
         fallbackSummary={article.ai_summary ?? article.description}
         onRead={() => onMarkRead?.(article.id)}
         onClose={() => { setInternalReaderOpen(false); onReaderClose?.() }}
+        onPrev={onPrevArticle}
+        onNext={onNextArticle}
       />
     )}
   </>
