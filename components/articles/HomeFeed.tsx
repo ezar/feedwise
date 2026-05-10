@@ -351,6 +351,17 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
   }, [burstMode])
 
   const unreadCount = articles.filter((a) => !a.is_read).length
+
+  // Sync PWA app badge with unread count
+  useEffect(() => {
+    const nav = navigator as Navigator & { setAppBadge?: (n?: number) => Promise<void>; clearAppBadge?: () => Promise<void> }
+    if (unreadCount > 0) {
+      nav.setAppBadge?.(unreadCount)?.catch(() => {})
+    } else {
+      nav.clearAppBadge?.()?.catch(() => {})
+    }
+  }, [unreadCount])
+
   const visible = useMemo(() => {
     let result = filter === 'unread'
       ? articles.filter((a) => unreadSnapshot.has(a.id))
