@@ -7,30 +7,49 @@ interface SwipeableArticleProps {
   onSwipeLeft?: () => void   // save
   onSwipeRight?: () => void  // mark read
   onTap?: () => void         // single tap (not a swipe)
+  onLongPress?: () => void   // long press (600ms)
   children: React.ReactNode
 }
 
 const SWIPE_THRESHOLD = 72
 
-export function SwipeableArticle({ onSwipeLeft, onSwipeRight, onTap, children }: SwipeableArticleProps) {
+export function SwipeableArticle({ onSwipeLeft, onSwipeRight, onTap, onLongPress, children }: SwipeableArticleProps) {
   const startX = useRef(0)
   const startY = useRef(0)
   const [deltaX, setDeltaX] = useState(0)
   const swiping = useRef(false)
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startX.current = e.touches[0].clientX
     startY.current = e.touches[0].clientY
     swiping.current = true
+    if (onLongPress) {
+      longPressTimer.current = setTimeout(() => {
+        longPressTimer.current = null
+        swiping.current = false
+        setDeltaX(0)
+        onLongPress()
+      }, 600)
+    }
   }
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!swiping.current) return
     const dx = e.touches[0].clientX - startX.current
+    const dy = Math.abs(e.touches[0].clientY - startY.current)
+    if (longPressTimer.current && (Math.abs(dx) > 10 || dy > 10)) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
     setDeltaX(Math.max(-120, Math.min(120, dx)))
   }
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
     if (!swiping.current) return
     swiping.current = false
     if (deltaX < -SWIPE_THRESHOLD) {
