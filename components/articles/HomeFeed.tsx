@@ -2,13 +2,14 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Newspaper, CheckCheck, ArrowDown, LayoutList, LayoutGrid, Copy, ChevronUp, Search, X } from 'lucide-react'
+import { Loader2, Newspaper, CheckCheck, ArrowDown, LayoutList, LayoutGrid, Copy, ChevronUp, Search, X, Zap } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { ArticleCard } from './ArticleCard'
 import { ArticleRow } from './ArticleRow'
 import { ReaderModal } from './ReaderModal'
 import { SwipeableArticle } from './SwipeableArticle'
 import { ShortcutsModal } from './ShortcutsModal'
+import { ArticleActionSheet } from './ArticleActionSheet'
 import { groupDuplicates } from '@/lib/dedup'
 import { TrendingTopics } from './TrendingTopics'
 import { cn } from '@/lib/utils'
@@ -83,6 +84,8 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
   const [dateFilter, setDateFilter] = useState<DateFilter>('all')
   const [focusedIdx, setFocusedIdx] = useState(-1)
   const [readerOpenId, setReaderOpenId] = useState<string | null>(null)
+  const [burstMode, setBurstMode] = useState(false)
+  const [actionSheetArticle, setActionSheetArticle] = useState<Article | null>(null)
   const focusedIdxRef = useRef(-1)
   const searchAbortRef = useRef<AbortController | null>(null)
 
@@ -330,6 +333,16 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
     setArticles((prev) => prev.map((a) => (a.id === id ? { ...a, is_read: true } : a)))
   }, [])
 
+  const handleReaderClose = useCallback((closedId: string) => {
+    setReaderOpenId(null)
+    if (burstMode) {
+      const flat = mainArticlesRef.current
+      const idx = flat.findIndex((a) => a.id === closedId)
+      const next = flat.slice(idx + 1).find((a) => !a.is_read)
+      if (next) setTimeout(() => setReaderOpenId(next.id), 200)
+    }
+  }, [burstMode])
+
   const unreadCount = articles.filter((a) => !a.is_read).length
   const visible = useMemo(() => {
     let result = filter === 'unread'
@@ -565,7 +578,8 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
             title={art.title ?? ''}
             articleId={art.id}
             fallbackSummary={art.ai_summary ?? art.description ?? undefined}
-            onClose={() => setReaderOpenId(null)}
+            onRead={() => handleMarkRead(art.id)}
+            onClose={() => handleReaderClose(art.id)}
           />
         )
       })()}
@@ -622,6 +636,13 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
             title={dedupEnabled ? t('dedupOn') : t('dedupOff')}
           >
             <Copy className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => setBurstMode((v) => !v)}
+            className={cn('transition-colors', burstMode ? 'text-primary' : 'text-muted-foreground hover:text-foreground')}
+            title={burstMode ? 'Modo ráfaga activado — abre artículos en serie' : 'Modo ráfaga'}
+          >
+            <Zap className="h-3.5 w-3.5" />
           </button>
           <button
             onClick={() => {
@@ -705,6 +726,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
                         onSwipeLeft={() => { handleSaveToggle(main.id, !main.is_saved); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_saved: !main.is_saved }) }) }}
                         onSwipeRight={() => { handleMarkRead(main.id); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_read: true }) }) }}
                         onTap={() => toggleCard(main.id)}
+                        onLongPress={() => setActionSheetArticle(main)}
                       >
                         <ArticleRow article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} onExpand={() => toggleCard(main.id)} onOpenReader={() => setReaderOpenId(main.id)} />
                       </SwipeableArticle>
@@ -755,10 +777,11 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
               <div key={main.id} className={isFocused ? 'ring-2 ring-primary/40 rounded-xl mb-0.5' : ''}>
                 <div ref={(el) => attachReadRef(el, main.id)}>
                   <SwipeableArticle
-                    onSwipeLeft={() => { handleSaveToggle(main.id, !main.is_saved); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_saved: !main.is_saved }) }) }}
+                    onSwipeLeft={() => { handleSaveToggle(main.id, !main.is_saved); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_saved: !main.is_saved }) })  }}
                     onSwipeRight={() => { handleMarkRead(main.id); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_read: true }) }) }}
+                    onLongPress={() => setActionSheetArticle(main)}
                   >
-                    <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} openReader={readerOpenId === main.id} onReaderClose={() => setReaderOpenId(null)} />
+                    <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} openReader={readerOpenId === main.id} onReaderClose={() => handleReaderClose(main.id)} />
                   </SwipeableArticle>
                 </div>
                 {dupes.length > 0 && !expandedGroups.has(main.id) && (
@@ -779,6 +802,16 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
           })}
         </div>
       ))}
+
+      {actionSheetArticle && (
+        <ArticleActionSheet
+          article={actionSheetArticle}
+          onClose={() => setActionSheetArticle(null)}
+          onOpenReader={() => setReaderOpenId(actionSheetArticle.id)}
+          onSaveToggle={handleSaveToggle}
+          onMarkRead={handleMarkRead}
+        />
+      )}
 
       {filter === 'unread' && unreadSnapshot.size === 0 && (
         <div className="flex flex-col items-center justify-center py-16 gap-2 text-center">
