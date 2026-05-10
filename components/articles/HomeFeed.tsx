@@ -607,13 +607,13 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
       })()}
 
       {/* Date + score filter chips */}
-      <div className="flex gap-1.5 flex-wrap">
+      <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
         {(['all', 'today', 'week'] as DateFilter[]).map((f) => (
           <button
             key={f}
             onClick={() => setDateFilter(f)}
             className={cn(
-              'text-xs px-2.5 py-1 rounded-full border transition-colors',
+              'text-xs px-2.5 py-1 rounded-full border transition-colors whitespace-nowrap',
               dateFilter === f
                 ? 'bg-primary text-primary-foreground border-primary'
                 : 'text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
@@ -623,21 +623,22 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
           </button>
         ))}
         <div className="w-px bg-border self-stretch" />
-        {[0, 50, 70, 85].map((score) => (
+        {[50, 70, 85].map((score) => (
           <button
             key={score}
             onClick={() => {
-              setMinScore(score)
-              localStorage.setItem('feedwise-score', String(score))
+              const next = minScore === score ? 0 : score
+              setMinScore(next)
+              localStorage.setItem('feedwise-score', String(next))
             }}
             className={cn(
-              'text-xs px-2.5 py-1 rounded-full border transition-colors',
+              'text-xs px-2.5 py-1 rounded-full border transition-colors whitespace-nowrap',
               minScore === score
                 ? 'bg-primary text-primary-foreground border-primary'
                 : 'text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
             )}
           >
-            {score === 0 ? t('all') : `≥${score}`}
+            {`≥${score}`}
           </button>
         ))}
       </div>
