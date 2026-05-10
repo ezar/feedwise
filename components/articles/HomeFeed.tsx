@@ -770,6 +770,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
                             onSaveToggle={handleSaveToggle}
                             onMarkRead={handleMarkRead}
                             openReader={readerOpenId === main.id}
+                            onReaderOpen={() => setReaderOpenId(main.id)}
                             onReaderClose={() => handleReaderClose(main.id)}
                             onPrevArticle={readerOpenId === main.id ? (() => { const list = mainArticlesRef.current; const idx = list.findIndex((a) => a.id === main.id); return idx > 0 ? () => { handleMarkRead(main.id); setReaderOpenId(list[idx - 1].id) } : undefined })() : undefined}
                             onNextArticle={readerOpenId === main.id ? (() => { const list = mainArticlesRef.current; const idx = list.findIndex((a) => a.id === main.id); return idx < list.length - 1 ? () => { handleMarkRead(main.id); setReaderOpenId(list[idx + 1].id) } : undefined })() : undefined}
@@ -877,6 +878,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
                       onSaveToggle={handleSaveToggle}
                       onMarkRead={handleMarkRead}
                       openReader={readerOpenId === main.id}
+                      onReaderOpen={() => setReaderOpenId(main.id)}
                       onReaderClose={() => handleReaderClose(main.id)}
                       onPrevArticle={readerOpenId === main.id ? (() => { const list = mainArticlesRef.current; const idx = list.findIndex((a) => a.id === main.id); return idx > 0 ? () => { handleMarkRead(main.id); setReaderOpenId(list[idx - 1].id) } : undefined })() : undefined}
                       onNextArticle={readerOpenId === main.id ? (() => { const list = mainArticlesRef.current; const idx = list.findIndex((a) => a.id === main.id); return idx < list.length - 1 ? () => { handleMarkRead(main.id); setReaderOpenId(list[idx + 1].id) } : undefined })() : undefined}
