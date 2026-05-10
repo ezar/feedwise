@@ -88,15 +88,18 @@ async function processFeed(feedId: string, supabase: ReturnType<typeof createSer
 
   if (highScoreArticles.length > 0) {
     const userId = feed.user_id as string
-    const { data: subs } = await supabase
-      .from('push_subscriptions')
-      .select('endpoint, p256dh, auth')
-      .eq('user_id', userId)
+    const [{ data: subs }, { count: unreadCount }] = await Promise.all([
+      supabase.from('push_subscriptions').select('endpoint, p256dh, auth').eq('user_id', userId),
+      supabase.from('articles').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('is_read', false),
+    ])
 
     if (subs && subs.length > 0) {
-      const payload = highScoreArticles.length === 1
-        ? { title: 'feedwise', body: highScoreArticles[0].title, url: highScoreArticles[0].url }
-        : { title: 'feedwise', body: `${highScoreArticles.length} new relevant articles`, url: '/' }
+      const payload = {
+        ...(highScoreArticles.length === 1
+          ? { title: 'feedwise', body: highScoreArticles[0].title, url: highScoreArticles[0].url }
+          : { title: 'feedwise', body: `${highScoreArticles.length} nuevos artículos relevantes`, url: '/' }),
+        unread: unreadCount ?? undefined,
+      }
 
       await Promise.allSettled(
         subs.map((sub) => sendPushNotification(sub as { endpoint: string; p256dh: string; auth: string }, payload))
