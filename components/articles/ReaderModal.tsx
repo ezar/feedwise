@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { X, ExternalLink, Loader2, BookOpen, AlertCircle, Highlighter, Trash2, Bookmark, BookmarkCheck, Sparkles, Maximize2, Minimize2 } from 'lucide-react'
+import { X, ExternalLink, Loader2, BookOpen, AlertCircle, Highlighter, Trash2, Bookmark, BookmarkCheck, Sparkles, Maximize2, Minimize2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { ShareButton } from './ShareButton'
@@ -24,6 +24,8 @@ interface ReaderModalProps {
   onSaveToggle?: (id: string, saved: boolean) => void
   onClose: () => void
   onRead?: () => void
+  onPrev?: () => void
+  onNext?: () => void
 }
 
 interface Highlight {
@@ -43,7 +45,7 @@ const FONT_SIZE_PX: Record<FontSize, string> = {
   sm: '0.875rem', base: '1rem', lg: '1.125rem', xl: '1.25rem',
 }
 
-export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = false, onSaveToggle, onClose, onRead }: ReaderModalProps) {
+export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = false, onSaveToggle, onClose, onRead, onPrev, onNext }: ReaderModalProps) {
   const t = useTranslations('article')
   const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading')
   const [content, setContent] = useState<ReaderContent | null>(null)
@@ -205,6 +207,10 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
       if (e.key === 'Escape') {
         if (tooltip) { setTooltip(null); return }
         handleClose()
+      } else if (e.key === 'ArrowLeft') {
+        onPrev?.()
+      } else if (e.key === 'ArrowRight') {
+        onNext?.()
       }
     }
     window.addEventListener('keydown', onKey)
@@ -442,6 +448,27 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
             </button>
           </div>
           <div className="flex items-center gap-1">
+            {(onPrev || onNext) && (
+              <div className="flex items-center border rounded-lg overflow-hidden">
+                <button
+                  onClick={onPrev}
+                  disabled={!onPrev}
+                  className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 transition-colors"
+                  title="Artículo anterior (←)"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <div className="w-px h-5 bg-border" />
+                <button
+                  onClick={onNext}
+                  disabled={!onNext}
+                  className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 transition-colors"
+                  title="Artículo siguiente (→)"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
             <ShareButton articleId={articleId} title={content?.title ?? title} url={url} summary={aiSummary} />
             <a
               href={url}
