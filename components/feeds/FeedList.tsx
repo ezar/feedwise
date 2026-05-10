@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Trash2, Rss, Clock, Sparkles, ChevronRight, AlertCircle, FolderPlus, X, CheckCheck } from 'lucide-react'
+import { Trash2, Rss, Clock, Sparkles, ChevronRight, AlertCircle, FolderPlus, X } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
