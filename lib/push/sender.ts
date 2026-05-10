@@ -16,6 +16,7 @@ interface PushPayload {
   title: string
   body: string
   url: string
+  unread?: number
 }
 
 interface Subscription {
