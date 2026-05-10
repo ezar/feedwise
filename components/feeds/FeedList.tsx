@@ -1,13 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { Trash2, Rss, Clock, Sparkles, ChevronRight, AlertCircle, FolderPlus, X } from 'lucide-react'
+import { Trash2, Rss, Clock, Sparkles, ChevronRight, AlertCircle, FolderPlus, X, CheckCheck } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/providers/ToastProvider'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
+import { SwipeableArticle } from '@/components/articles/SwipeableArticle'
 
 interface Feed {
   id: string
@@ -83,8 +84,16 @@ function FolderEditor({ feedId, initial }: { feedId: string; initial: string | n
 
 export function FeedList({ feeds, onDeleted }: FeedListProps) {
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>(
+    () => Object.fromEntries(feeds.map((f) => [f.id, f.unread_count ?? 0]))
+  )
   const { toast } = useToast()
   const t = useTranslations('feeds')
+
+  const handleMarkFeedRead = async (feedId: string) => {
+    setUnreadCounts((prev) => ({ ...prev, [feedId]: 0 }))
+    await fetch(`/api/articles/read-all?feed_id=${feedId}`, { method: 'POST', credentials: 'include' })
+  }
 
   const handleDelete = async (feed: Feed) => {
     setDeleting(feed.id)
@@ -112,14 +121,17 @@ export function FeedList({ feeds, onDeleted }: FeedListProps) {
   return (
     <ul className="flex flex-col gap-2">
       {feeds.map((feed) => (
-        <li
-          key={feed.id}
-          className={cn(
-            'flex items-center gap-3 p-3 border rounded-lg transition-opacity',
-            feed.last_error && 'border-destructive/40 bg-destructive/5',
-            deleting === feed.id && 'opacity-40 pointer-events-none'
-          )}
-        >
+        <li key={feed.id} className="rounded-lg overflow-hidden">
+          <SwipeableArticle
+            onSwipeRight={unreadCounts[feed.id] ? () => handleMarkFeedRead(feed.id) : undefined}
+          >
+          <div
+            className={cn(
+              'flex items-center gap-3 p-3 border rounded-lg transition-opacity bg-background',
+              feed.last_error && 'border-destructive/40 bg-destructive/5',
+              deleting === feed.id && 'opacity-40 pointer-events-none'
+            )}
+          >
           {feed.last_error
             ? <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
             : feed.feed_type === 'topic'
@@ -161,9 +173,9 @@ export function FeedList({ feeds, onDeleted }: FeedListProps) {
           <div onClick={(e) => e.preventDefault()}>
             <FolderEditor feedId={feed.id} initial={feed.folder} />
           </div>
-          {(feed.unread_count ?? 0) > 0 && (
+          {(unreadCounts[feed.id] ?? 0) > 0 && (
             <span className="text-xs font-medium tabular-nums bg-primary/10 text-primary rounded-full px-2 py-0.5 shrink-0">
-              {feed.unread_count}
+              {unreadCounts[feed.id]}
             </span>
           )}
           <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
@@ -177,6 +189,8 @@ export function FeedList({ feeds, onDeleted }: FeedListProps) {
           >
             <Trash2 className="h-4 w-4" />
           </Button>
+          </div>
+          </SwipeableArticle>
         </li>
       ))}
     </ul>

@@ -71,26 +71,30 @@ export function SwipeableArticle({ onSwipeLeft, onSwipeRight, onTap, onLongPress
 
   return (
     <div className="relative overflow-hidden">
-      {/* Save indicator (swipe left) */}
-      <div
-        className="absolute inset-0 flex items-center justify-end px-4 bg-primary/10 transition-opacity"
-        style={{ opacity: goingLeft ? Math.min(1, Math.abs(deltaX) / SWIPE_THRESHOLD) : 0 }}
-      >
-        <div className={`flex items-center gap-1.5 text-primary transition-transform ${triggeredLeft ? 'scale-110' : ''}`}>
-          <Bookmark className="h-4 w-4" />
-          <span className="text-xs font-medium">Guardar</span>
+      {/* Save indicator (swipe left) — only when handler exists */}
+      {onSwipeLeft && (
+        <div
+          className="absolute inset-0 flex items-center justify-end px-4 bg-primary/10 transition-opacity"
+          style={{ opacity: goingLeft ? Math.min(1, Math.abs(deltaX) / SWIPE_THRESHOLD) : 0 }}
+        >
+          <div className={`flex items-center gap-1.5 text-primary transition-transform ${triggeredLeft ? 'scale-110' : ''}`}>
+            <Bookmark className="h-4 w-4" />
+            <span className="text-xs font-medium">Guardar</span>
+          </div>
         </div>
-      </div>
-      {/* Read indicator (swipe right) */}
-      <div
-        className="absolute inset-0 flex items-center justify-start px-4 bg-green-500/10 transition-opacity"
-        style={{ opacity: goingRight ? Math.min(1, Math.abs(deltaX) / SWIPE_THRESHOLD) : 0 }}
-      >
-        <div className={`flex items-center gap-1.5 text-green-600 dark:text-green-400 transition-transform ${triggeredRight ? 'scale-110' : ''}`}>
-          <CheckCheck className="h-4 w-4" />
-          <span className="text-xs font-medium">Leído</span>
+      )}
+      {/* Read indicator (swipe right) — only when handler exists */}
+      {onSwipeRight && (
+        <div
+          className="absolute inset-0 flex items-center justify-start px-4 bg-green-500/10 transition-opacity"
+          style={{ opacity: goingRight ? Math.min(1, Math.abs(deltaX) / SWIPE_THRESHOLD) : 0 }}
+        >
+          <div className={`flex items-center gap-1.5 text-green-600 dark:text-green-400 transition-transform ${triggeredRight ? 'scale-110' : ''}`}>
+            <CheckCheck className="h-4 w-4" />
+            <span className="text-xs font-medium">Leído</span>
+          </div>
         </div>
-      </div>
+      )}
       {/* Content */}
       <div
         style={{

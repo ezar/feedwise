@@ -88,6 +88,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
   const [actionSheetArticle, setActionSheetArticle] = useState<Article | null>(null)
   const focusedIdxRef = useRef(-1)
   const searchAbortRef = useRef<AbortController | null>(null)
+  const articlesRef = useRef<Article[]>(articles)
 
   const toggleCard = (id: string) =>
     setExpandedCards((prev) => {
@@ -336,10 +337,12 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
   const handleReaderClose = useCallback((closedId: string) => {
     setReaderOpenId(null)
     if (burstMode) {
-      const flat = mainArticlesRef.current
-      const idx = flat.findIndex((a) => a.id === closedId)
-      const next = flat.slice(idx + 1).find((a) => !a.is_read)
-      if (next) setTimeout(() => setReaderOpenId(next.id), 200)
+      // Use articlesRef (always current) to find the next unread after the closed article
+      const all = articlesRef.current
+      const idx = all.findIndex((a) => a.id === closedId)
+      const list = idx >= 0 ? all.slice(idx + 1) : all
+      const next = list.find((a) => !a.is_read)
+      if (next) setTimeout(() => setReaderOpenId(next.id), 250)
     }
   }, [burstMode])
 
@@ -407,6 +410,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
   useEffect(() => {
     mainArticlesRef.current = dateGrouped.flatMap(({ groups: g }) => g.map(({ main }) => main))
   }, [dateGrouped])
+  useEffect(() => { articlesRef.current = articles }, [articles])
   useEffect(() => { focusedIdxRef.current = focusedIdx }, [focusedIdx])
 
   // Keyboard navigation
@@ -718,7 +722,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
                           {t('collapse')}
                         </button>
                         <div className="p-2">
-                          <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} openReader={readerOpenId === main.id} onReaderClose={() => setReaderOpenId(null)} />
+                          <ArticleCard article={main} onSaveToggle={handleSaveToggle} onMarkRead={handleMarkRead} openReader={readerOpenId === main.id} onReaderClose={() => handleReaderClose(main.id)} />
                         </div>
                       </div>
                     ) : (
