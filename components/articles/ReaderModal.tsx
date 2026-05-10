@@ -454,7 +454,7 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
                   onClick={onPrev}
                   disabled={!onPrev}
                   className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 transition-colors"
-                  title="Artículo anterior (←)"
+                  title="Anterior (←)"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
@@ -463,7 +463,7 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
                   onClick={onNext}
                   disabled={!onNext}
                   className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 transition-colors"
-                  title="Artículo siguiente (→)"
+                  title="Siguiente (→)"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>

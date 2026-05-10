@@ -596,8 +596,6 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
         if (!art) return null
         const list = mainArticlesRef.current
         const idx = list.findIndex((a) => a.id === readerOpenId)
-        const goPrev = idx > 0 ? () => { handleMarkRead(readerOpenId); setReaderOpenId(list[idx - 1].id) } : undefined
-        const goNext = idx >= 0 && idx < list.length - 1 ? () => { handleMarkRead(readerOpenId); setReaderOpenId(list[idx + 1].id) } : undefined
         return (
           <ReaderModal
             url={art.url ?? ''}
@@ -606,8 +604,8 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
             fallbackSummary={art.ai_summary ?? art.description ?? undefined}
             onRead={() => handleMarkRead(art.id)}
             onClose={() => handleReaderClose(art.id)}
-            onPrev={goPrev}
-            onNext={goNext}
+            onPrev={idx > 0 ? () => { handleMarkRead(readerOpenId); setReaderOpenId(list[idx - 1].id) } : undefined}
+            onNext={idx < list.length - 1 ? () => { handleMarkRead(readerOpenId); setReaderOpenId(list[idx + 1].id) } : undefined}
           />
         )
       })()}
@@ -773,8 +771,8 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
                             onMarkRead={handleMarkRead}
                             openReader={readerOpenId === main.id}
                             onReaderClose={() => handleReaderClose(main.id)}
-                            onPrevArticle={(() => { const list = mainArticlesRef.current; const idx = list.findIndex((a) => a.id === main.id); return idx > 0 ? () => { handleMarkRead(main.id); setReaderOpenId(list[idx - 1].id) } : undefined })()}
-                            onNextArticle={(() => { const list = mainArticlesRef.current; const idx = list.findIndex((a) => a.id === main.id); return idx >= 0 && idx < list.length - 1 ? () => { handleMarkRead(main.id); setReaderOpenId(list[idx + 1].id) } : undefined })()}
+                            onPrevArticle={readerOpenId === main.id ? (() => { const list = mainArticlesRef.current; const idx = list.findIndex((a) => a.id === main.id); return idx > 0 ? () => { handleMarkRead(main.id); setReaderOpenId(list[idx - 1].id) } : undefined })() : undefined}
+                            onNextArticle={readerOpenId === main.id ? (() => { const list = mainArticlesRef.current; const idx = list.findIndex((a) => a.id === main.id); return idx < list.length - 1 ? () => { handleMarkRead(main.id); setReaderOpenId(list[idx + 1].id) } : undefined })() : undefined}
                           />
                         </div>
                       </div>
@@ -880,8 +878,8 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
                       onMarkRead={handleMarkRead}
                       openReader={readerOpenId === main.id}
                       onReaderClose={() => handleReaderClose(main.id)}
-                      onPrevArticle={(() => { const list = mainArticlesRef.current; const idx = list.findIndex((a) => a.id === main.id); return idx > 0 ? () => { handleMarkRead(main.id); setReaderOpenId(list[idx - 1].id) } : undefined })()}
-                      onNextArticle={(() => { const list = mainArticlesRef.current; const idx = list.findIndex((a) => a.id === main.id); return idx >= 0 && idx < list.length - 1 ? () => { handleMarkRead(main.id); setReaderOpenId(list[idx + 1].id) } : undefined })()}
+                      onPrevArticle={readerOpenId === main.id ? (() => { const list = mainArticlesRef.current; const idx = list.findIndex((a) => a.id === main.id); return idx > 0 ? () => { handleMarkRead(main.id); setReaderOpenId(list[idx - 1].id) } : undefined })() : undefined}
+                      onNextArticle={readerOpenId === main.id ? (() => { const list = mainArticlesRef.current; const idx = list.findIndex((a) => a.id === main.id); return idx < list.length - 1 ? () => { handleMarkRead(main.id); setReaderOpenId(list[idx + 1].id) } : undefined })() : undefined}
                     />
                   </SwipeableArticle>
                 </div>
