@@ -45,6 +45,7 @@
     "refreshing": "Actualizando…",
     "viewCompact": "Vista compacta",
     "viewCard": "Vista en tarjetas",
+    "viewTitles": "Vista solo títulos",
     "dedupOn": "Deduplicación activada — pulsa para desactivar",
     "dedupOff": "Deduplicación desactivada — pulsa para activar",
     "dupeHidden": "{count} similares ocultos",

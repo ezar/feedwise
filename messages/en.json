@@ -45,6 +45,7 @@
     "refreshing": "Refreshing…",
     "viewCompact": "Compact view",
     "viewCard": "Card view",
+    "viewTitles": "Titles only view",
     "dedupOn": "Deduplication on — click to disable",
     "dedupOff": "Deduplication off — click to enable",
     "dupeHidden": "{count} similar hidden",

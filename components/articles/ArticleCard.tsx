@@ -203,6 +203,7 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead, openReader: ext
         title={article.title}
         articleId={article.id}
         fallbackSummary={article.ai_summary ?? article.description}
+        onRead={() => onMarkRead?.(article.id)}
         onClose={() => { setInternalReaderOpen(false); onReaderClose?.() }}
       />
     )}

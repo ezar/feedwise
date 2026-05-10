@@ -23,6 +23,7 @@ interface ReaderModalProps {
   isSaved?: boolean
   onSaveToggle?: (id: string, saved: boolean) => void
   onClose: () => void
+  onRead?: () => void
 }
 
 interface Highlight {
@@ -42,7 +43,7 @@ const FONT_SIZE_PX: Record<FontSize, string> = {
   sm: '0.875rem', base: '1rem', lg: '1.125rem', xl: '1.25rem',
 }
 
-export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = false, onSaveToggle, onClose }: ReaderModalProps) {
+export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = false, onSaveToggle, onClose, onRead }: ReaderModalProps) {
   const t = useTranslations('article')
   const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading')
   const [content, setContent] = useState<ReaderContent | null>(null)
@@ -60,6 +61,7 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
   const [loadingSummary, setLoadingSummary] = useState(false)
   const backdropRef = useRef<HTMLDivElement>(null)
   const articleRef = useRef<HTMLDivElement>(null)
+  const didLoadRef = useRef(false)
 
   const changeFontSize = (dir: 1 | -1) => {
     setFontSize((prev) => {
@@ -80,6 +82,7 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
         if (!res.ok || data.error) throw new Error(data.error ?? 'Error')
         setContent(data)
         setState('ok')
+        didLoadRef.current = true
         // Track reader engagement — fire and forget
         fetch(`/api/articles/${articleId}`, {
           method: 'PATCH', credentials: 'include',
@@ -152,6 +155,18 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
     })
   }, [articleId])
 
+  const handleClose = useCallback(() => {
+    if (didLoadRef.current) {
+      onRead?.()
+      fetch(`/api/articles/${articleId}`, {
+        method: 'PATCH', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_read: true }),
+      }).catch(() => {})
+    }
+    onClose()
+  }, [onClose, onRead, articleId])
+
   const handleSave = useCallback(() => {
     const next = !saved
     setSaved(next)
@@ -189,7 +204,7 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (tooltip) { setTooltip(null); return }
-        onClose()
+        handleClose()
       }
     }
     window.addEventListener('keydown', onKey)
@@ -199,7 +214,7 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = prev
     }
-  }, [onClose, tooltip])
+  }, [handleClose, tooltip])
 
   useEffect(() => {
     if (!tooltip) return
@@ -217,7 +232,7 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
         'fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-center',
         focusMode ? 'items-stretch p-0' : 'items-end sm:items-center sm:p-4'
       )}
-      onClick={(e) => { if (e.target === backdropRef.current) onClose() }}
+      onClick={(e) => { if (e.target === backdropRef.current) handleClose() }}
     >
       <div
         className={cn(
@@ -277,7 +292,7 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
               {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
             </button>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
               <X className="h-4 w-4" />
