@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Rss, Sparkles, Clock, ExternalLink, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
 import { HomeFeed } from '@/components/articles/HomeFeed'
@@ -26,17 +27,46 @@ export default async function FeedDetailPage({
 
   if (!feed) notFound()
 
-  // Fetch all feed IDs in list order to build prev/next navigation
-  const { data: allFeeds } = await supabase
+  // Fetch all feeds in list order to build prev/next navigation
+  const sortCookie = cookies().get('feedwise-feeds-sort')?.value ?? 'default'
+
+  const { data: rawFeeds } = await supabase
     .from('feeds')
-    .select('id, title')
+    .select('id, title, last_fetched_at')
     .eq('user_id', user!.id)
     .order('created_at', { ascending: false })
 
-  const feedIds = (allFeeds ?? []).map((f) => f.id as string)
-  const currentIdx = feedIds.indexOf(params.id)
-  const prevFeed = currentIdx > 0 ? (allFeeds ?? [])[currentIdx - 1] : null
-  const nextFeed = currentIdx < feedIds.length - 1 ? (allFeeds ?? [])[currentIdx + 1] : null
+  type RawFeed = { id: string; title: string | null; last_fetched_at: string | null }
+  let allFeeds: RawFeed[] = (rawFeeds ?? []) as RawFeed[]
+
+  if (sortCookie === 'alpha') {
+    allFeeds = [...allFeeds].sort((a, b) =>
+      (a.title ?? '').localeCompare(b.title ?? '')
+    )
+  } else if (sortCookie === 'recent') {
+    allFeeds = [...allFeeds].sort((a, b) => {
+      const ta = a.last_fetched_at ? new Date(a.last_fetched_at).getTime() : 0
+      const tb = b.last_fetched_at ? new Date(b.last_fetched_at).getTime() : 0
+      return tb - ta
+    })
+  } else if (sortCookie === 'unread') {
+    // Fetch unread counts to sort by (same approach as the feeds API)
+    const { data: unreadRows } = await supabase
+      .from('articles')
+      .select('feed_id')
+      .eq('is_read', false)
+    const unreadMap = new Map<string, number>()
+    for (const row of unreadRows ?? []) {
+      const fid = row.feed_id as string
+      unreadMap.set(fid, (unreadMap.get(fid) ?? 0) + 1)
+    }
+    allFeeds = [...allFeeds].sort((a, b) =>
+      (unreadMap.get(b.id) ?? 0) - (unreadMap.get(a.id) ?? 0)
+    )
+  }
+
+  const currentIdx = allFeeds.findIndex((f) => f.id === params.id)
+  const nextFeed = currentIdx < allFeeds.length - 1 ? allFeeds[currentIdx + 1] : null
 
   const [{ data: articles }, { count: totalCount }, { count: pendingCount }] = await Promise.all([
     supabase
@@ -70,35 +100,16 @@ export default async function FeedDetailPage({
             <ArrowLeft className="h-4 w-4" />
             Volver a feeds
           </Link>
-          <div className="flex items-center gap-1">
-            {prevFeed ? (
-              <Link
-                href={`/feeds/${prevFeed.id}`}
-                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-muted"
-                title={prevFeed.title ?? ''}
-              >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline max-w-[120px] truncate">{prevFeed.title}</span>
-              </Link>
-            ) : (
-              <span className="px-2 py-1 opacity-0 pointer-events-none"><ArrowLeft className="h-3.5 w-3.5" /></span>
-            )}
-            <span className="text-xs text-muted-foreground tabular-nums px-1">
-              {currentIdx + 1}/{feedIds.length}
-            </span>
-            {nextFeed ? (
-              <Link
-                href={`/feeds/${nextFeed.id}`}
-                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-muted"
-                title={nextFeed.title ?? ''}
-              >
-                <span className="hidden sm:inline max-w-[120px] truncate">{nextFeed.title}</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            ) : (
-              <span className="px-2 py-1 opacity-0 pointer-events-none"><ArrowRight className="h-3.5 w-3.5" /></span>
-            )}
-          </div>
+          {nextFeed && (
+            <Link
+              href={`/feeds/${nextFeed.id}`}
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              title={nextFeed.title ?? ''}
+            >
+              <span className="max-w-[140px] truncate">{nextFeed.title}</span>
+              <ArrowRight className="h-4 w-4 shrink-0" />
+            </Link>
+          )}
         </div>
 
         <div className="flex items-start gap-3">
