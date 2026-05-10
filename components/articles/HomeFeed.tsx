@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Newspaper, CheckCheck, ArrowDown, LayoutList, LayoutGrid, Copy, ChevronUp, Search, X, Zap } from 'lucide-react'
+import { Loader2, Newspaper, CheckCheck, ArrowDown, LayoutList, LayoutGrid, Copy, ChevronUp, Search, X, Zap, List } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { ArticleCard } from './ArticleCard'
 import { ArticleRow } from './ArticleRow'
@@ -14,7 +14,7 @@ import { groupDuplicates } from '@/lib/dedup'
 import { TrendingTopics } from './TrendingTopics'
 import { cn } from '@/lib/utils'
 
-type ViewMode = 'card' | 'compact'
+type ViewMode = 'card' | 'compact' | 'titles'
 type DateBucket = 'today' | 'yesterday' | 'thisWeek' | 'older'
 type DateFilter = 'all' | 'today' | 'week'
 
@@ -86,6 +86,10 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
   const [readerOpenId, setReaderOpenId] = useState<string | null>(null)
   const [burstMode, setBurstMode] = useState(false)
   const [actionSheetArticle, setActionSheetArticle] = useState<Article | null>(null)
+  const [minScore, setMinScore] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0
+    return parseInt(localStorage.getItem('feedwise-score') ?? '0', 10)
+  })
   const focusedIdxRef = useRef(-1)
   const searchAbortRef = useRef<AbortController | null>(null)
   const articlesRef = useRef<Article[]>(articles)
@@ -356,8 +360,11 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
     } else if (dateFilter === 'week') {
       result = result.filter((a) => getDateBucket(a.published_at) !== 'older')
     }
+    if (minScore > 0) {
+      result = result.filter((a) => (a.relevance_score ?? 0) >= minScore)
+    }
     return result
-  }, [articles, filter, unreadSnapshot, dateFilter])
+  }, [articles, filter, unreadSnapshot, dateFilter, minScore])
 
   const activeArticles = useMemo(() => {
     let result = searchResults ?? visible
@@ -572,8 +579,8 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
 
       {showShortcuts && <ShortcutsModal onClose={() => setShowShortcuts(false)} />}
 
-      {/* Reader modal for compact-view rows (no ArticleCard mounted) */}
-      {viewMode === 'compact' && readerOpenId && (() => {
+      {/* Reader modal for compact/titles-view rows (no ArticleCard mounted) */}
+      {(viewMode === 'compact' || viewMode === 'titles') && readerOpenId && (() => {
         const art = articles.find((a) => a.id === readerOpenId)
         if (!art) return null
         return (
@@ -588,8 +595,8 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
         )
       })()}
 
-      {/* Date filter chips */}
-      <div className="flex gap-1.5">
+      {/* Date + score filter chips */}
+      <div className="flex gap-1.5 flex-wrap">
         {(['all', 'today', 'week'] as DateFilter[]).map((f) => (
           <button
             key={f}
@@ -602,6 +609,24 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
             )}
           >
             {t(f === 'all' ? 'dateAll' : f === 'today' ? 'dateToday' : 'dateWeek')}
+          </button>
+        ))}
+        <div className="w-px bg-border self-stretch" />
+        {[0, 50, 70, 85].map((score) => (
+          <button
+            key={score}
+            onClick={() => {
+              setMinScore(score)
+              localStorage.setItem('feedwise-score', String(score))
+            }}
+            className={cn(
+              'text-xs px-2.5 py-1 rounded-full border transition-colors',
+              minScore === score
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
+            )}
+          >
+            {score === 0 ? t('all') : `≥${score}`}
           </button>
         ))}
       </div>
@@ -650,15 +675,17 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
           </button>
           <button
             onClick={() => {
-              const next: ViewMode = viewMode === 'card' ? 'compact' : 'card'
+              const next: ViewMode = viewMode === 'card' ? 'compact' : viewMode === 'compact' ? 'titles' : 'card'
               setViewMode(next)
               localStorage.setItem('feedwise-view', next)
             }}
             className="text-muted-foreground hover:text-foreground transition-colors"
-            title={viewMode === 'card' ? t('viewCompact') : t('viewCard')}
+            title={viewMode === 'card' ? t('viewCompact') : viewMode === 'compact' ? t('viewTitles') : t('viewCard')}
           >
             {viewMode === 'card'
               ? <LayoutList className="h-4 w-4" />
+              : viewMode === 'compact'
+              ? <List className="h-4 w-4" />
               : <LayoutGrid className="h-4 w-4" />
             }
           </button>
@@ -764,6 +791,42 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
                       )}
                     </div>
                   ))}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      ))}
+      {viewMode === 'titles' && dateGrouped.map(({ bucket, groups: bucketGroups }) => (
+        <div key={bucket}>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide px-1 pb-1 pt-2 first:pt-0">
+            {t(bucket)}
+          </p>
+          <div className="border rounded-lg overflow-hidden divide-y">
+            {bucketGroups.map(({ main }) => {
+              const isFocused = flatIndexMap.get(main.id) === focusedIdx && focusedIdx >= 0
+              return (
+                <div key={main.id} ref={(el) => attachReadRef(el, main.id)} className={isFocused ? 'ring-2 ring-inset ring-primary/40' : ''}>
+                  <SwipeableArticle
+                    onSwipeLeft={() => { handleSaveToggle(main.id, !main.is_saved); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_saved: !main.is_saved }) }) }}
+                    onSwipeRight={() => { handleMarkRead(main.id); fetch(`/api/articles/${main.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_read: true }) }) }}
+                    onTap={() => setReaderOpenId(main.id)}
+                    onLongPress={() => setActionSheetArticle(main)}
+                  >
+                    <button
+                      className={cn(
+                        'w-full text-left flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/50 transition-colors',
+                        main.is_read && 'opacity-40'
+                      )}
+                      onClick={() => setReaderOpenId(main.id)}
+                    >
+                      <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', main.is_read ? 'bg-transparent' : 'bg-primary')} />
+                      <span className="flex-1 truncate leading-snug">{main.title}</span>
+                      {main.relevance_score != null && (
+                        <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground/50">{main.relevance_score}</span>
+                      )}
+                    </button>
+                  </SwipeableArticle>
                 </div>
               )
             })}
