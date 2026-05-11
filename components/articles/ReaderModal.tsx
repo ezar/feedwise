@@ -202,24 +202,31 @@ export function ReaderModal({ url, title, articleId, fallbackSummary, isSaved = 
     }
   }, [aiSummary, articleId])
 
+  // Lock body scroll exactly once on mount/unmount — isolated from other deps
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [])
+
+  const onPrevRef = useRef(onPrev)
+  const onNextRef = useRef(onNext)
+  useEffect(() => { onPrevRef.current = onPrev }, [onPrev])
+  useEffect(() => { onNextRef.current = onNext }, [onNext])
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (tooltip) { setTooltip(null); return }
         handleClose()
       } else if (e.key === 'ArrowLeft') {
-        onPrev?.()
+        onPrevRef.current?.()
       } else if (e.key === 'ArrowRight') {
-        onNext?.()
+        onNextRef.current?.()
       }
     }
     window.addEventListener('keydown', onKey)
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      window.removeEventListener('keydown', onKey)
-      document.body.style.overflow = prev
-    }
+    return () => window.removeEventListener('keydown', onKey)
   }, [handleClose, tooltip])
 
   useEffect(() => {
