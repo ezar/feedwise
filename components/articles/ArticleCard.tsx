@@ -129,7 +129,7 @@ export function ArticleCard({ article, onSaveToggle, onMarkRead, openReader: ext
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              onClick={(e) => { e.preventDefault(); setInternalReaderOpen(true); onReaderOpen?.() }}
+              onClick={(e) => { e.preventDefault(); if (onReaderOpen) { onReaderOpen() } else { setInternalReaderOpen(true) } }}
               title={t('reader')}
             >
               <BookOpen className="h-4 w-4 text-muted-foreground" />
