@@ -43,14 +43,12 @@ const splashStyles = `
     align-items: center;
     justify-content: center;
     gap: 20px;
-    background: #0f172a;
+    background: #ffffff;
     transition: opacity 0.35s ease;
     pointer-events: none;
   }
-  @media (prefers-color-scheme: light) {
-    #app-splash { background: #ffffff; }
-    #app-splash .splash-name { color: #0f172a; }
-    #app-splash .splash-dot { background: #94a3b8; }
+  .dark #app-splash {
+    background: #0f172a;
   }
   #app-splash img {
     width: 72px;
@@ -63,8 +61,11 @@ const splashStyles = `
     font-size: 22px;
     font-weight: 700;
     letter-spacing: -0.5px;
-    color: #f8fafc;
+    color: #0f172a;
     animation: splash-in 0.4s 0.05s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  .dark #app-splash .splash-name {
+    color: #f8fafc;
   }
   #app-splash .splash-dots {
     display: flex;
@@ -75,8 +76,11 @@ const splashStyles = `
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #475569;
+    background: #94a3b8;
     animation: splash-pulse 1.2s ease-in-out infinite;
+  }
+  .dark #app-splash .splash-dot {
+    background: #475569;
   }
   #app-splash .splash-dot:nth-child(2) { animation-delay: 0.15s; }
   #app-splash .splash-dot:nth-child(3) { animation-delay: 0.30s; }
