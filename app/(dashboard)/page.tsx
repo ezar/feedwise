@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { HomeFeed } from '@/components/articles/HomeFeed'
 import { TopPicks } from '@/components/articles/TopPicks'
+import { InterestsBanner } from '@/components/articles/InterestsBanner'
 import { RefreshButton } from '@/components/layout/RefreshButton'
-import { AlertTriangle, Folder } from 'lucide-react'
+import { Folder } from 'lucide-react'
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 
@@ -76,15 +77,7 @@ export default async function HomePage({ searchParams }: { searchParams: { folde
         <RefreshButton />
       </div>
 
-      {!hasInterests && (
-        <Link href="/settings" className="flex items-start gap-3 mb-6 p-4 rounded-lg border border-yellow-200 bg-yellow-50 text-yellow-900 hover:bg-yellow-100 transition-colors dark:border-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300">
-          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium">{t('interestsBanner')}</p>
-            <p className="text-xs mt-0.5 opacity-80">{t('interestsBannerHint')}</p>
-          </div>
-        </Link>
-      )}
+      {!hasInterests && <InterestsBanner />}
 
       {!folder && <TopPicks />}
 
