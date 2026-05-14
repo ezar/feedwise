@@ -648,9 +648,9 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
       </div>
 
       {/* Filter bar */}
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex flex-col shrink-0">
-          <p className="text-xs text-muted-foreground">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-col min-w-0">
+          <p className="text-xs text-muted-foreground truncate">
             {unreadCount > 0 ? t('unread', { count: unreadCount }) : t('allRead')}
             {' · '}{t('loaded', { count: dedupEnabled ? dedupedCount : visible.length })}
           </p>
@@ -660,7 +660,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           {unreadCount > 0 && (
             <button
               onClick={handleMarkAllRead}
@@ -716,7 +716,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
                 setHasMore(true)
               }}
               className={cn(
-                'px-3 py-1 transition-colors',
+                'px-2.5 py-1 transition-colors',
                 filter === 'all' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
               )}
             >
@@ -733,7 +733,7 @@ export function HomeFeed({ initialArticles, feedId }: HomeFeedProps) {
                 setHasMore(true)
               }}
               className={cn(
-                'px-3 py-1 transition-colors border-l',
+                'px-2.5 py-1 transition-colors border-l',
                 filter === 'unread' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
               )}
             >
